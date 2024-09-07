@@ -1,0 +1,16 @@
+baseURL: https://example.org/
+languageCode: en-us
+title: Partition Skew
+paginate: 5
+theme: ["PaperMod"]
+
+params:
+  keywords: ["Blog", "PaperMod", "Software", "Tech"]
+  defaultTheme: auto
+
+menu:
+  main:
+    - identifier: tags
+      name: tags
+      url: /tags/
+      weight: 10
