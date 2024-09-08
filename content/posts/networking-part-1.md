@@ -4,7 +4,7 @@ summary = 'A quick primer on IP addresses, CIDR notation, and subnets'
 tags = ["networking", "introduction"]
 date = 2024-09-07
 showToc = true
-draft = true
+draft = false
 +++
 
 ## Introduction
