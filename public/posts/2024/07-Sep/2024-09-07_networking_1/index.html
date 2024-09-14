@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
-<title>Introduction to Computer Networking - Part 1 (IP addresses) | Partition Skew</title>
-<meta name="keywords" content="networking, introduction">
+<meta name="robots" content="index, follow">
+<title>Computer Networking - Part 1: IP addresses | Partition Skew</title>
+<meta name="keywords" content="networking, introduction, ip address">
 <meta name="description" content="A quick primer on IP addresses, CIDR notation, and subnets">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:1313/posts/networking-part-1/">
+<link rel="canonical" href="https://example.org/posts/2024/07-sep/2024-09-07_networking_1/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:1313/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/networking-part-1/">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/2024/07-sep/2024-09-07_networking_1/">
 <noscript>
     <style>
         #theme-toggle,
@@ -55,7 +55,67 @@
         }
 
     </style>
-</noscript>
+</noscript><meta property="og:title" content="Computer Networking - Part 1: IP addresses" />
+<meta property="og:description" content="A quick primer on IP addresses, CIDR notation, and subnets" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/2024/07-sep/2024-09-07_networking_1/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2024-09-07T00:00:00+00:00" />
+<meta property="article:modified_time" content="2024-09-07T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Computer Networking - Part 1: IP addresses"/>
+<meta name="twitter:description" content="A quick primer on IP addresses, CIDR notation, and subnets"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Computer Networking - Part 1: IP addresses",
+      "item": "https://example.org/posts/2024/07-sep/2024-09-07_networking_1/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Computer Networking - Part 1: IP addresses",
+  "name": "Computer Networking - Part 1: IP addresses",
+  "description": "A quick primer on IP addresses, CIDR notation, and subnets",
+  "keywords": [
+    "networking", "introduction", "ip address"
+  ],
+  "articleBody": "Introduction In this series, I explain the fundamental concepts that underpin computer networking.\nIn part 1, we discuss what an IP address is. In part 2, we’ll talk about what happens behind the scenes when you enter a website like en.wikipedia.org in your web browser.\nNote: this article assumes you are familiar with the binary number system\nInternet Protocol (IP) address Every machine and device that you can reach on the public internet has a public IP address. A regular home address is needed for the postal office to be able to deliver your mail to the right person. Similarly, an IP address functions the same way to ensure that your data and requests make it to the correct web application.\nAn IP address is a numeric identifier consisting of 4 eight-bit numbers delimited by a period. For example, 0.0.0.0 and 255.255.255.255 are both valid IP addresses. As a reminder, an 8-bit binary number can represent any decimal number between 0 to 255 (inclusive)\nIf you do the math, this works out to 2^8 x 2^8 x 2^8 x 2^8 = 2^32 = ~4.3 billion unique IP addresses.\nReserved IP addresses Not every IP address is available for public use. Certain ranges of IP addresses are reserved for special use cases such as localhost (127.0.0.1) which refers to the machine that an application is running on. Another reserved set of IP address ranges is the private IP address range which encompasses:\n10.0.0.0 - 10.255.255.255 172.16.0.0 - 172.31.255.255 192.168.0.0 - 192.168.255.255 You can’t directly reach a private IP address over the public internet. Private IP addresses are not unique. In my home network, I can have a mobile phone with a private IP address of 192.168.123.88. On your home network, maybe your smart fridge has the exact same private IP address.\nYou might be wondering what the point of private IP addresses are at all. Unsurprisingly, private IP addresses are very useful. However, to fully leverage private IP addresses requires routers, modems, and something called network address translation (NAT). We’ll cover this in another post.\nIPv4 vs. IPv6 addresses The IP addresses we’ve discussed are actually IPv4 addresses. The Internet Protocol went through several iterations and the 4th version uses 32 bits to address devices on the network. However, there’s over 15 billion mobile devices in the world let alone all the other types of devices that can surf the web. If there’s only 4.3 billion unique IPv4 addresses, how can we make sure every network-connected device is reachable?\nThere are two solutions. One is to use private IP addresses and NAT. We’ll discuss this in another post.\nAnother option is to use IPv6 addresses. Unlike IPv4, IPv6 allocates 128 bits to the address. Instead of 4 eight-bit digits (32 bits total), IPv6 uses 8 groups of 4 hexadecimals that are colon-delimited. Since each hexadecimal is 4-bits big, each IPv6 address therefore requires 128 bits (8 groups * 4 hexadecimals * 4 bits per hexadecimal = 128).\nIPv6 addresses range from 0:0:0:0:0:0:0:0 to ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff. In other words, there’s a lot of IPv6 addresses and we’re at no risk of running out any time soon.\nAs a quick reminder, hexadecimal is a base-16 numbering system. Whereas the binary number system has two possible values for each digit (0 \u0026 1) and decimal has 10 possible values (0 - 9), hexadecimal has 16 possible values (0 - 9 \u0026 a - f). Representing 16 possible values requires at least 4 bits (2^4 = 16). Ergo each hexadecimal has a corresponding 4-bit representation.\nCIDR notation As an aside, CIDR notation is a way to succinctly describe ranges of IP addresses. The way that it works is every CIDR block consists of two parts:\nthe IP address prefix a number between 0 - 32 which indicates how many leading bits are fixed For example, the IP address range 10.1.2.0 - 10.1.2.255 can be expressed as the CIDR block, 10.1.2.0/24. The way to interpret this is that for every single IP address in this range, the first 24 bits are always the same. They are always 10.1.2 (base-10) or 0001000.00000001.00000010 (base-2). The remaining 8 bits are variable. In total, this CIDR block describes a range of 2^8 = 256 IP addresses.\nThe number does not need to be a multiple of 8 although it’s easier to reason about. For example, consider the following CIDR block, 192.168.0.0/22. Since the first 22 bits are fixed, this means the last 10 bits are variable. 2^10 means this CIDR block represents an address range of 1024 unique IPs.\nTo get the actual IP address range, let’s convert the IPv4 address to its binary form:\n11000000.10101000.00000000.00000000 The first 22 bits are fixed: 11000000.10101000.000000\nThe last 10 bits are variable and can range from a minimum of 00.00000000 to a maximum of 11.11111111\nHence, the IP address range denoted by the CIDR block, 192.168.0.0/22 is:\n11000000.10101000.00000000.00000000 to 11000000.10101000.00000011.11111111 (binary) 192.168.0.0 to 192.168.3.255 (decimal) Subnets Finally, we’ll briefly discuss what a subnet is. A subnet is simply a subset of a bigger network. If the entire internet consists of approximately 4.3 billion IP addresses, then a subnet is merely a smaller portion of it. For example, 192.168.0.0/16 is a subnet consisting exclusively of private IP addresses.\nWith CIDR blocks, you can easily carve out smaller subnets. Why might you want to do this? Imagine you’re a business that has been granted a /16 subnet. This means you have exactly 65,536 IP addresses to work with. Since your organization consists of several teams, you may want to divide up the subnet into even smaller subnets to be distributed to each team.\nThis way, a single team can’t exhaust all the IP addresses and leave the other teams out to dry. For example, you may divide up your /16 subnet into two /17 subnets (32,768 IP addresses each) or 4 /18 subnets (16,384).\nRemember, binary works in powers of 2.\nReferences Wikipedia Reserved IP addresses DigitalOcean Understanding IP addresses, subnets, and CIDR notation for networking ",
+  "wordCount" : "1000",
+  "inLanguage": "en",
+  "datePublished": "2024-09-07T00:00:00Z",
+  "dateModified": "2024-09-07T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/2024/07-sep/2024-09-07_networking_1/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Partition Skew",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
 </head>
 
 <body class="" id="top">
@@ -73,7 +133,7 @@
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:1313/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <a href="https://example.org/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -99,7 +159,7 @@
         </div>
         <ul id="menu">
             <li>
-                <a href="http://localhost:1313/tags/" title="tags">
+                <a href="https://example.org/tags/" title="tags">
                     <span>tags</span>
                 </a>
             </li>
@@ -112,13 +172,7 @@
   <header class="post-header">
     
     <h1 class="post-title entry-hint-parent">
-      Introduction to Computer Networking - Part 1 (IP addresses)
-      <span class="entry-hint" title="Draft">
-        <svg xmlns="http://www.w3.org/2000/svg" height="35" viewBox="0 -960 960 960" fill="currentColor">
-          <path
-            d="M160-410v-60h300v60H160Zm0-165v-60h470v60H160Zm0-165v-60h470v60H160Zm360 580v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q9 9 13 20t4 22q0 11-4.5 22.5T862.09-380L643-160H520Zm300-263-37-37 37 37ZM580-220h38l121-122-18-19-19-18-122 121v38Zm141-141-19-18 37 37-18-19Z" />
-        </svg>
-      </span>
+      Computer Networking - Part 1: IP addresses
     </h1>
     <div class="post-meta"><span title='2024-09-07 00:00:00 +0000 UTC'>September 7, 2024</span>
 
@@ -161,7 +215,7 @@
 
   <div class="post-content"><h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
 <p>In this series, I explain the fundamental concepts that underpin computer networking.</p>
-<p>In part 1, we discuss what an IP address is. In part 2, we&rsquo;ll talk about what happens behind the scenes when you enter a website like en.wikipedia.org in your web browser.</p>
+<p>In part 1, we discuss what an IP address is. In <a href="/posts/2024/07-sep/2024-09-14_networking_2">part 2</a>, we&rsquo;ll talk about what happens behind the scenes when you enter a website like en.wikipedia.org in your web browser.</p>
 <p><em>Note: this article assumes you are familiar with the binary number system</em></p>
 <h2 id="internet-protocol-ip-address">Internet Protocol (IP) address<a hidden class="anchor" aria-hidden="true" href="#internet-protocol-ip-address">#</a></h2>
 <p>Every machine and device that you can reach on the public internet has a public IP address. A regular home address is needed for the postal office to be able to deliver your mail to the right person. Similarly, an IP address functions the same way to ensure that your data and requests make it to the correct web application.</p>
@@ -223,15 +277,16 @@
 
   <footer class="post-footer">
     <ul class="post-tags">
-      <li><a href="http://localhost:1313/tags/networking/">Networking</a></li>
-      <li><a href="http://localhost:1313/tags/introduction/">Introduction</a></li>
+      <li><a href="https://example.org/tags/networking/">Networking</a></li>
+      <li><a href="https://example.org/tags/introduction/">Introduction</a></li>
+      <li><a href="https://example.org/tags/ip-address/">Ip Address</a></li>
     </ul>
   </footer>
 </article>
     </main>
     
 <footer class="footer">
-        <span>&copy; 2024 <a href="http://localhost:1313/">Partition Skew</a></span> · 
+        <span>&copy; 2024 <a href="https://example.org/">Partition Skew</a></span> · 
 
     <span>
         Powered by

@@ -2,23 +2,25 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Networking on Partition Skew</title>
-    <link>http://localhost:1313/tags/networking/</link>
+    <link>https://example.org/tags/networking/</link>
     <description>Recent content in Networking on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 07 Sep 2024 13:32:58 -0700</lastBuildDate>
-    <atom:link href="http://localhost:1313/tags/networking/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 13 Sep 2024 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://example.org/tags/networking/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Introduction to Computer Networking - Part 1 (IP addresses)</title>
-      <link>http://localhost:1313/posts/networking-part-1/</link>
-      <pubDate>Sat, 07 Sep 2024 13:32:58 -0700</pubDate>
-      <guid>http://localhost:1313/posts/networking-part-1/</guid>
-      <description>&lt;h2 id=&#34;purpose&#34;&gt;Purpose&lt;/h2&gt;
-&lt;p&gt;In this series, I explain the fundamental concepts that underpin computer networking.&lt;/p&gt;
-&lt;p&gt;In part 1, we discuss what an IP address is. In part 2, we&amp;rsquo;ll talk about what happens behind the scenes when you enter a website like en.wikipedia.org in your web browser.&lt;/p&gt;
-&lt;p&gt;&lt;em&gt;Note: this article assumes you are familiar with the binary number system&lt;/em&gt;&lt;/p&gt;
-&lt;h2 id=&#34;internet-protocol-ip-address&#34;&gt;Internet Protocol (IP) address&lt;/h2&gt;
-&lt;p&gt;Every machine and device that you can reach on the public internet has a public IP address. A regular home address is needed for the postal office to be able to deliver your mail to the right person. Similarly, an IP address functions the same way to ensure that your data and requests make it to the correct web application.&lt;/p&gt;</description>
+      <title>Computer Networking - Part 2: DNS</title>
+      <link>https://example.org/posts/2024/07-sep/2024-09-14_networking_2/</link>
+      <pubDate>Fri, 13 Sep 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/posts/2024/07-sep/2024-09-14_networking_2/</guid>
+      <description>What happens when you enter a website into your web browser?</description>
+    </item>
+    <item>
+      <title>Computer Networking - Part 1: IP addresses</title>
+      <link>https://example.org/posts/2024/07-sep/2024-09-07_networking_1/</link>
+      <pubDate>Sat, 07 Sep 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/posts/2024/07-sep/2024-09-07_networking_1/</guid>
+      <description>A quick primer on IP addresses, CIDR notation, and subnets</description>
     </item>
   </channel>
 </rss>

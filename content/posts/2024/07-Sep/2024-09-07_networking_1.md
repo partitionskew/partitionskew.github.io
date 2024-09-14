@@ -1,7 +1,7 @@
 +++
-title = 'Introduction to Computer Networking - Part 1 (IP addresses)'
+title = 'Computer Networking - Part 1: IP addresses'
 summary = 'A quick primer on IP addresses, CIDR notation, and subnets'
-tags = ["networking", "introduction"]
+tags = ["networking", "introduction", "ip address"]
 date = 2024-09-07
 showToc = true
 draft = false
@@ -11,7 +11,7 @@ draft = false
 
 In this series, I explain the fundamental concepts that underpin computer networking.
 
-In part 1, we discuss what an IP address is. In part 2, we'll talk about what happens behind the scenes when you enter a website like en.wikipedia.org in your web browser.
+In part 1, we discuss what an IP address is. In [part 2](/posts/2024/07-sep/2024-09-14_networking_2), we'll talk about what happens behind the scenes when you enter a website like en.wikipedia.org in your web browser.
 
 _Note: this article assumes you are familiar with the binary number system_
 

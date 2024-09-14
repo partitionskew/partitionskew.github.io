@@ -1,26 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Partition Skew</title>
-    <link>https://example.org/</link>
-    <description>Recent content on Partition Skew</description>
+    <title>Dns on Partition Skew</title>
+    <link>https://example.org/tags/dns/</link>
+    <description>Recent content in Dns on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
     <lastBuildDate>Fri, 13 Sep 2024 00:00:00 +0000</lastBuildDate>
-    <atom:link href="https://example.org/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://example.org/tags/dns/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Computer Networking - Part 2: DNS</title>
       <link>https://example.org/posts/2024/07-sep/2024-09-14_networking_2/</link>
       <pubDate>Fri, 13 Sep 2024 00:00:00 +0000</pubDate>
       <guid>https://example.org/posts/2024/07-sep/2024-09-14_networking_2/</guid>
       <description>What happens when you enter a website into your web browser?</description>
-    </item>
-    <item>
-      <title>Computer Networking - Part 1: IP addresses</title>
-      <link>https://example.org/posts/2024/07-sep/2024-09-07_networking_1/</link>
-      <pubDate>Sat, 07 Sep 2024 00:00:00 +0000</pubDate>
-      <guid>https://example.org/posts/2024/07-sep/2024-09-07_networking_1/</guid>
-      <description>A quick primer on IP addresses, CIDR notation, and subnets</description>
     </item>
   </channel>
 </rss>
