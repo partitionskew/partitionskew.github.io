@@ -92,15 +92,17 @@ DNS records are text files that are stored in authoritative nameservers. There a
 
 An A record maps a domain name to an IPv4 address.
 
-| Domain | Record Type | Value | TTL (seconds)
-| example.com | A | 1.2.3.4 | 86400 (1 day)
+| Domain | Record Type | Value | TTL (seconds) |
+| --- | --- | --- | --- |
+| example.com | A | 1.2.3.4 | 86400 (1 day) |
 
 ### DNS AAAA record
 
 It's basically the same as an A record except it maps a domain name to an IPv6 address.
 
-| Domain | Record Type | Value | TTL (seconds)
-| another-example.org | A | 1:f:b:3:4:6:8:d | 3600 (1 hour)
+| Domain | Record Type | Value | TTL (seconds) |
+| --- | --- | --- | --- |
+| another-example.org | A | 1:f:b:3:4:6:8:d | 3600 (1 hour) |
 
 ### DNS CNAME record
 
@@ -110,17 +112,19 @@ You might be confused as to why we even need to do this. There's a couple valid 
 
 Another reason is purely bureaucratic or organizational. Consider an IT team that's responsible for provisioning servers and assigning them IP addresses and domain names. The IT team may have a convention for how it names the domain name of the server which is not exactly easy to remember. Hence, you as the application or web developer may choose a friendlier, easier-to-remember domain name and then create a CNAME record so that it becomes an alias for the actual domain name of the server.
 
-| Domain | Record Type | IP Address | TTL (seconds)
-| some-subdomain.domain.org | CNAME | domain.org | 3600 (1 hour)
+| Domain | Record Type | IP Address | TTL (seconds) |
+| --- | --- | --- | --- |
+| some-subdomain.domain.org | CNAME | domain.org | 3600 (1 hour) |
 
-| Domain | Record Type | IP Address | TTL (seconds)
-| domain.org | A | 3.3.3.3 | 3600 (1 hour)
+| Domain | Record Type | IP Address | TTL (seconds) |
+| --- | --- | --- | --- |
+| domain.org | A | 3.3.3.3 | 3600 (1 hour) |
 
 ## Summary
 
 Putting it all together, this is what happens when you enter a URL in your web browser:
 
-![domain_name_system](/posts/2024/07-sep/images/domain_name_system.png)
+![domain_name_system](content\posts\2024\07-Sep\images\domain_name_system.png)
 
 1. The client (e.g. web browser) checks its cache for an cache entry that contains the mapping of the domain name to an IP address. If the cached entry exists, then the IP address is used to contact the web server. No DNS query is issued.
 2. If the IP address was not cached, then the client issues a DNS query to a DNS recursive resolver. The DNS recursive resolver contacts the nearest root nameserver.
