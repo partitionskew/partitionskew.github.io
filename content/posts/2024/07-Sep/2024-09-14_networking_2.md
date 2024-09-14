@@ -124,7 +124,7 @@ Another reason is purely bureaucratic or organizational. Consider an IT team tha
 
 Putting it all together, this is what happens when you enter a URL in your web browser:
 
-![domain_name_system](/content/posts/2024/07-sep/images/domain_name_system.png)
+![domain_name_system](/images/2024/07-sep/2024-09-13/domain_name_system.png)
 
 1. The client (e.g. web browser) checks its cache for an cache entry that contains the mapping of the domain name to an IP address. If the cached entry exists, then the IP address is used to contact the web server. No DNS query is issued.
 2. If the IP address was not cached, then the client issues a DNS query to a DNS recursive resolver. The DNS recursive resolver contacts the nearest root nameserver.
