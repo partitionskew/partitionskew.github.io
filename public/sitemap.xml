@@ -2,6 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://example.org/tags/batch-processing/</loc>
+    <lastmod>2024-09-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/kappa-architecture/</loc>
+    <lastmod>2024-09-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/lambda-architecture/</loc>
+    <lastmod>2024-09-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/posts/2024/07-sep/2024-09-22_stream_processing/</loc>
+    <lastmod>2024-09-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/</loc>
+    <lastmod>2024-09-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/posts/</loc>
+    <lastmod>2024-09-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/stream-processing/</loc>
+    <lastmod>2024-09-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/</loc>
+    <lastmod>2024-09-22T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://example.org/posts/2024/07-sep/2024-09-14_networking_2/</loc>
     <lastmod>2024-09-13T00:00:00+00:00</lastmod>
   </url><url>
@@ -12,15 +36,6 @@
     <lastmod>2024-09-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/tags/networking/</loc>
-    <lastmod>2024-09-13T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/</loc>
-    <lastmod>2024-09-13T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/posts/</loc>
-    <lastmod>2024-09-13T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/</loc>
     <lastmod>2024-09-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/posts/2024/07-sep/2024-09-07_networking_1/</loc>

@@ -6,8 +6,15 @@
     <description>Recent content on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 13 Sep 2024 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 22 Sep 2024 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://example.org/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Lambda vs. Kappa Architecture</title>
+      <link>https://example.org/posts/2024/07-sep/2024-09-22_stream_processing/</link>
+      <pubDate>Sun, 22 Sep 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/posts/2024/07-sep/2024-09-22_stream_processing/</guid>
+      <description>A brief description and comparison of lambda and kappa architectures</description>
+    </item>
     <item>
       <title>Computer Networking - Part 2: DNS</title>
       <link>https://example.org/posts/2024/07-sep/2024-09-14_networking_2/</link>

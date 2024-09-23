@@ -6,8 +6,36 @@
     <description>Recent content in Tags on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 13 Sep 2024 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 22 Sep 2024 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://example.org/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Batch Processing</title>
+      <link>https://example.org/tags/batch-processing/</link>
+      <pubDate>Sun, 22 Sep 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/tags/batch-processing/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Kappa Architecture</title>
+      <link>https://example.org/tags/kappa-architecture/</link>
+      <pubDate>Sun, 22 Sep 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/tags/kappa-architecture/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Lambda Architecture</title>
+      <link>https://example.org/tags/lambda-architecture/</link>
+      <pubDate>Sun, 22 Sep 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/tags/lambda-architecture/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Stream Processing</title>
+      <link>https://example.org/tags/stream-processing/</link>
+      <pubDate>Sun, 22 Sep 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/tags/stream-processing/</guid>
+      <description></description>
+    </item>
     <item>
       <title>Dns</title>
       <link>https://example.org/tags/dns/</link>
