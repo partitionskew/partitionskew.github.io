@@ -6,8 +6,15 @@
     <description>Recent content in Networking on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 13 Sep 2024 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 28 Sep 2024 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://example.org/tags/networking/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Computer Networking - Part 3: OSI model</title>
+      <link>https://example.org/posts/2024/07-sep/2024-09-28_osi_model/</link>
+      <pubDate>Sat, 28 Sep 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/posts/2024/07-sep/2024-09-28_osi_model/</guid>
+      <description>Examining a simplified model of the internet</description>
+    </item>
     <item>
       <title>Computer Networking - Part 2: DNS</title>
       <link>https://example.org/posts/2024/07-sep/2024-09-14_networking_2/</link>

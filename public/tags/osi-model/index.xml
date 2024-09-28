@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Osi Model on Partition Skew</title>
+    <link>https://example.org/tags/osi-model/</link>
+    <description>Recent content in Osi Model on Partition Skew</description>
+    <generator>Hugo -- 0.134.0</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 28 Sep 2024 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://example.org/tags/osi-model/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Computer Networking - Part 3: OSI model</title>
+      <link>https://example.org/posts/2024/07-sep/2024-09-28_osi_model/</link>
+      <pubDate>Sat, 28 Sep 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/posts/2024/07-sep/2024-09-28_osi_model/</guid>
+      <description>Examining a simplified model of the internet</description>
+    </item>
+  </channel>
+</rss>

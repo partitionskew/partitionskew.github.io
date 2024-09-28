@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Computer Networking - Part 3: OSI model | Partition Skew</title>
+<meta name="keywords" content="osi model, networking, introduction, layered architecture">
+<meta name="description" content="Examining a simplified model of the internet">
+<meta name="author" content="">
+<link rel="canonical" href="https://example.org/posts/2024/07-sep/2024-09-28_osi_model/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/2024/07-sep/2024-09-28_osi_model/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Computer Networking - Part 3: OSI model" />
+<meta property="og:description" content="Examining a simplified model of the internet" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/2024/07-sep/2024-09-28_osi_model/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2024-09-28T00:00:00+00:00" />
+<meta property="article:modified_time" content="2024-09-28T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Computer Networking - Part 3: OSI model"/>
+<meta name="twitter:description" content="Examining a simplified model of the internet"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Computer Networking - Part 3: OSI model",
+      "item": "https://example.org/posts/2024/07-sep/2024-09-28_osi_model/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Computer Networking - Part 3: OSI model",
+  "name": "Computer Networking - Part 3: OSI model",
+  "description": "Examining a simplified model of the internet",
+  "keywords": [
+    "osi model", "networking", "introduction", "layered architecture"
+  ],
+  "articleBody": "Introduction Today, we examine and explain the OSI model of the internet. The OSI model describes network communication between systems as being composed of 7 distinct layers of functionality.\nLayered architecture The layered architecture is a common pattern for designing a system. Each layer encapsulates a set of related functionality. A layer provides a service to the layer above it and depends on the services of the layer below it. Traditionally, a closed layer model enforces that a layer may only communicate with the layer directly above or below it. In an open model, this constraint is relaxed and layers may be skipped as the request is routed through the layers.\nThe purpose of layers is to enforce a separation of concerns. Each layer is responsible for a specific feature and the closed model ensures that dependencies are minimized. The system is therefore easier to understand and evolve since a change to one layer may only impact up to 2 other layers at most. The trade-off is additional overhead since a request may need to traverse every single layer to get to the final layer since skipping layers is not allowed. This also increases the overall latency to complete a request.\nIn the open model, a request could potentially skip layers that it doesn’t care about which leads to lower latency overall. However, dependencies between layers increase and make it harder to evolve the system. Likewise, security vulnerabilities could be introduced if a request skips crucial layers that perform data validation and sanitization.\nIn the above figure, a 3 tier architecture is shown on the right. The top-most layer is the presentation layer that the user interacts with. This layer is responsible for displaying content to the user, responding to user input, and sending requests to the middle layer. The next layer is the business layer which encapsulates application logic such as validating the user request and retrieving the relevant information from the bottom-most layer. The data layer persists information in a durable data store such as a relational database.\nIn the next section, we’ll discuss the OSI model which is a 7-layer architecture.\nOSI model The OSI model is a way of describing computer networking as a 7-layer architecture. As a software developer, network engineer, or system administrator, you don’t need to memorize each of the 7 layers in great detail. As long as you understand what a layered architecture is and remember the key layers (3, 4, and 7), then you understand the OSI model.\nPhysical Layer The physical medium through which data is transported. Examples include fiber-optic cables, copper cables, or even air. The data is converted to electrical, radio, or optical pulses that represent the bits (0s and 1s) of information that traverses the medium.\nData link layer This layer is responsible for transporting data across two computers on the same network. It delegates the actual transport of data to the physical layer. Examples of layer 2 protocols include Wi-Fi and ethernet.\nNetwork layer This layer is responsible for transporting data across two computers on different networks. Your home may have a single network, but the data on your computer will need to traverse many networks in between to reach the intended recipient.\nThis layer has 2 major responsibilities:\nHost addressing: every machine on a network must have a unique address Message forwarding/routing: since machines aren’t directly connected to each other, this layer needs to figure out the best/optimal path to route data from sender to recipient The most important protocol at this layer is the Internet Protocol (IP). We’ll talk much more about IP in another post.\nTransport layer (aka layer 4) The transport layer is responsible for end-to-end communication between two different applications on a network. The 4th layer adds additional capabilities to the 3 layers below it. For example, this layer adds:\nFlow control: ensuring the sender isn’t transmitting data faster than the recipient can handle Error control: data can be lost or corrupted as it traverses the network, this layer ensures mechanisms are in place to correct such occurrences Flow and error control aren’t the only features implemented at this layer. However, the exact features depend on the protocol you choose. The two most important protocols at the transport layer are: transmission control protocol (TCP) and user datagram protocol (UDP).\nWhich of the two you choose depends on the requirements of your application. We’ll talk in much greater detail about TCP and UDP in another post.\nSession \u0026 Presentation layers The session layer is responsible for establishing a connection between the sender and the recipient so that data can be transferred. The presentation layer is responsible for things like data encryption, data compression, and ensuring the data is readable by the application. Encryption ensures that data is obscured as it traverses the network so that bad actors can’t snoop on the information. Compression helps transmit less data overall without losing any information.\nApplication layer (aka layer 7) This layer refers to the protocols that computer applications use to talk to each other over the network. There are many application protocols. Hypertext transfer protocol (HTTP) is the most common protocol used on the internet. Other common protocols include:\nfile transfer protocol (FTP): protocol for transferring files from a client to a server and vice-versa secure shell protocol (SSH): a protocol that allows a computer to securely send commands to another computer simple mail transfer protocol (SMTP): a protocol for sending and receiving mail These certainly aren’t the only application-layer protocols. We’ll talk about HTTP in a separate article.\nConclusion The OSI model is a conceptual model of a computer network. In actual implementations, some layers may really exist whereas other layers are only abstractions.\nAs for the internet, the most important layers are:\napplication layer (layer 7, L7) transport layer (layer 4, L4) network layer (layer 3, L3) physical layer In the next part of the computer networking series, we’ll discuss the TCP/IP model of the internet.\nReferences Microsoft N-tier architecure style Cloudflare What is the OSI model? ",
+  "wordCount" : "1005",
+  "inLanguage": "en",
+  "datePublished": "2024-09-28T00:00:00Z",
+  "dateModified": "2024-09-28T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/2024/07-sep/2024-09-28_osi_model/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Partition Skew",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://example.org/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://example.org/tags/" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Computer Networking - Part 3: OSI model
+    </h1>
+    <div class="post-meta"><span title='2024-09-28 00:00:00 +0000 UTC'>September 28, 2024</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#introduction" aria-label="Introduction">Introduction</a></li>
+                <li>
+                    <a href="#layered-architecture" aria-label="Layered architecture">Layered architecture</a></li>
+                <li>
+                    <a href="#osi-model" aria-label="OSI model">OSI model</a><ul>
+                        
+                <li>
+                    <a href="#physical-layer" aria-label="Physical Layer">Physical Layer</a></li>
+                <li>
+                    <a href="#data-link-layer" aria-label="Data link layer">Data link layer</a></li>
+                <li>
+                    <a href="#network-layer" aria-label="Network layer">Network layer</a></li>
+                <li>
+                    <a href="#transport-layer-aka-layer-4" aria-label="Transport layer (aka layer 4)">Transport layer (aka layer 4)</a></li>
+                <li>
+                    <a href="#session--presentation-layers" aria-label="Session &amp; Presentation layers">Session &amp; Presentation layers</a></li>
+                <li>
+                    <a href="#application-layer-aka-layer-7" aria-label="Application layer (aka layer 7)">Application layer (aka layer 7)</a></li></ul>
+                </li>
+                <li>
+                    <a href="#conclusion" aria-label="Conclusion">Conclusion</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a><ul>
+                        
+                <li>
+                    <a href="#microsoft" aria-label="Microsoft">Microsoft</a></li>
+                <li>
+                    <a href="#cloudflare" aria-label="Cloudflare">Cloudflare</a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
+<p>Today, we examine and explain the OSI model of the internet. The OSI model describes network communication between systems as being composed of 7 distinct layers of functionality.</p>
+<h2 id="layered-architecture">Layered architecture<a hidden class="anchor" aria-hidden="true" href="#layered-architecture">#</a></h2>
+<p>The <strong>layered architecture</strong> is a common pattern for designing a system. Each layer encapsulates a set of related functionality. A layer provides a service to the layer above it and depends on the services of the layer below it. Traditionally, a closed layer model enforces that a layer may only communicate with the layer directly above or below it. In an open model, this constraint is relaxed and layers may be skipped as the request is routed through the layers.</p>
+<p>The purpose of layers is to enforce a <strong>separation of concerns</strong>. Each layer is responsible for a specific feature and the closed model ensures that dependencies are minimized. The system is therefore easier to understand and evolve since a change to one layer may only impact up to 2 other layers at most. The trade-off is additional overhead since a request may need to traverse every single layer to get to the final layer since skipping layers is not allowed. This also increases the overall latency to complete a request.</p>
+<p>In the open model, a request could potentially skip layers that it doesn&rsquo;t care about which leads to lower latency overall. However, dependencies between layers increase and make it harder to evolve the system. Likewise, security vulnerabilities could be introduced if a request skips crucial layers that perform data validation and sanitization.</p>
+<p><img loading="lazy" src="/images/2024-09-28_layers.png" alt="layered_architecture"  />
+</p>
+<p>In the above figure, a 3 tier architecture is shown on the right. The top-most layer is the presentation layer that the user interacts with. This layer is responsible for displaying content to the user, responding to user input, and sending requests to the middle layer. The next layer is the business layer which encapsulates application logic such as validating the user request and retrieving the relevant information from the bottom-most layer. The data layer persists information in a durable data store such as a relational database.</p>
+<p>In the next section, we&rsquo;ll discuss the OSI model which is a 7-layer architecture.</p>
+<h2 id="osi-model">OSI model<a hidden class="anchor" aria-hidden="true" href="#osi-model">#</a></h2>
+<p>The OSI model is a way of describing computer networking as a 7-layer architecture. As a software developer, network engineer, or system administrator, you don&rsquo;t need to memorize each of the 7 layers in great detail. As long as you understand what a layered architecture is and remember the key layers (3, 4, and 7), then you understand the OSI model.</p>
+<h3 id="physical-layer">Physical Layer<a hidden class="anchor" aria-hidden="true" href="#physical-layer">#</a></h3>
+<p>The physical medium through which data is transported. Examples include fiber-optic cables, copper cables, or even air. The data is converted to electrical, radio, or optical pulses that represent the bits (0s and 1s) of information that traverses the medium.</p>
+<h3 id="data-link-layer">Data link layer<a hidden class="anchor" aria-hidden="true" href="#data-link-layer">#</a></h3>
+<p>This layer is responsible for transporting data across two computers on the same network. It delegates the actual transport of data to the physical layer. Examples of layer 2 protocols include Wi-Fi and ethernet.</p>
+<h3 id="network-layer">Network layer<a hidden class="anchor" aria-hidden="true" href="#network-layer">#</a></h3>
+<p>This layer is responsible for transporting data across two computers on different networks. Your home may have a single network, but the data on your computer will need to traverse many networks in between to reach the intended recipient.</p>
+<p>This layer has 2 major responsibilities:</p>
+<ol>
+<li>Host addressing: every machine on a network must have a unique address</li>
+<li>Message forwarding/routing: since machines aren&rsquo;t directly connected to each other, this layer needs to figure out the best/optimal path to route data from sender to recipient</li>
+</ol>
+<p>The most important protocol at this layer is the <strong>Internet Protocol</strong> (IP). We&rsquo;ll talk much more about IP in another post.</p>
+<h3 id="transport-layer-aka-layer-4">Transport layer (aka layer 4)<a hidden class="anchor" aria-hidden="true" href="#transport-layer-aka-layer-4">#</a></h3>
+<p>The transport layer is responsible for end-to-end communication between two different applications on a network. The 4th layer adds additional capabilities to the 3 layers below it. For example, this layer adds:</p>
+<ol>
+<li>Flow control: ensuring the sender isn&rsquo;t transmitting data faster than the recipient can handle</li>
+<li>Error control: data can be lost or corrupted as it traverses the network, this layer ensures mechanisms are in place to correct such occurrences</li>
+</ol>
+<p>Flow and error control aren&rsquo;t the only features implemented at this layer. However, the exact features depend on the protocol you choose. The two most important protocols at the transport layer are: <strong>transmission control protocol</strong> (TCP) and <strong>user datagram protocol</strong> (UDP).</p>
+<p>Which of the two you choose depends on the requirements of your application. We&rsquo;ll talk in much greater detail about TCP and UDP in another post.</p>
+<h3 id="session--presentation-layers">Session &amp; Presentation layers<a hidden class="anchor" aria-hidden="true" href="#session--presentation-layers">#</a></h3>
+<p>The session layer is responsible for establishing a connection between the sender and the recipient so that data can be transferred. The presentation layer is responsible for things like data encryption, data compression, and ensuring the data is readable by the application. Encryption ensures that data is obscured as it traverses the network so that bad actors can&rsquo;t snoop on the information. Compression helps transmit less data overall without losing any information.</p>
+<h3 id="application-layer-aka-layer-7">Application layer (aka layer 7)<a hidden class="anchor" aria-hidden="true" href="#application-layer-aka-layer-7">#</a></h3>
+<p>This layer refers to the protocols that computer applications use to talk to each other over the network. There are many application protocols. <strong>Hypertext transfer protocol</strong> (HTTP) is the most common protocol used on the internet. Other common protocols include:</p>
+<ul>
+<li>file transfer protocol (FTP): protocol for transferring files from a client to a server and vice-versa</li>
+<li>secure shell protocol (SSH): a protocol that allows a computer to securely send commands to another computer</li>
+<li>simple mail transfer protocol (SMTP): a protocol for sending and receiving mail</li>
+</ul>
+<p>These certainly aren&rsquo;t the only application-layer protocols. We&rsquo;ll talk about HTTP in a separate article.</p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>The OSI model is a conceptual model of a computer network. In actual implementations, some layers may really exist whereas other layers are only abstractions.</p>
+<p>As for the internet, the most important layers are:</p>
+<ol>
+<li>application layer (layer 7, L7)</li>
+<li>transport layer (layer 4, L4)</li>
+<li>network layer (layer 3, L3)</li>
+<li>physical layer</li>
+</ol>
+<p>In the next part of the computer networking series, we&rsquo;ll discuss the TCP/IP model of the internet.</p>
+<h2 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h2>
+<h3 id="microsoft">Microsoft<a hidden class="anchor" aria-hidden="true" href="#microsoft">#</a></h3>
+<ul>
+<li><a href="https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/n-tier">N-tier architecure style</a></li>
+</ul>
+<h3 id="cloudflare">Cloudflare<a hidden class="anchor" aria-hidden="true" href="#cloudflare">#</a></h3>
+<ul>
+<li><a href="https://www.cloudflare.com/en-ca/learning/ddos/glossary/open-systems-interconnection-model-osi/">What is the OSI model?</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://example.org/tags/osi-model/">Osi Model</a></li>
+      <li><a href="https://example.org/tags/networking/">Networking</a></li>
+      <li><a href="https://example.org/tags/introduction/">Introduction</a></li>
+      <li><a href="https://example.org/tags/layered-architecture/">Layered Architecture</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="https://example.org/">Partition Skew</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>
