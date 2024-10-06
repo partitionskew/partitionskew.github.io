@@ -6,8 +6,22 @@
     <description>Recent content in Tags on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 28 Sep 2024 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 06 Oct 2024 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://example.org/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Shell Scripting</title>
+      <link>https://example.org/tags/shell-scripting/</link>
+      <pubDate>Sun, 06 Oct 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/tags/shell-scripting/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Xargs</title>
+      <link>https://example.org/tags/xargs/</link>
+      <pubDate>Sun, 06 Oct 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/tags/xargs/</guid>
+      <description></description>
+    </item>
     <item>
       <title>Introduction</title>
       <link>https://example.org/tags/introduction/</link>

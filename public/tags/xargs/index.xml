@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Xargs on Partition Skew</title>
+    <link>https://example.org/tags/xargs/</link>
+    <description>Recent content in Xargs on Partition Skew</description>
+    <generator>Hugo -- 0.134.0</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 06 Oct 2024 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://example.org/tags/xargs/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Shell Scripting - xargs</title>
+      <link>https://example.org/posts/2024/07-sep/2024-10-06_shell_script_xargs/</link>
+      <pubDate>Sun, 06 Oct 2024 00:00:00 +0000</pubDate>
+      <guid>https://example.org/posts/2024/07-sep/2024-10-06_shell_script_xargs/</guid>
+      <description>A quick look at how xargs can help us create and run commands</description>
+    </item>
+  </channel>
+</rss>

@@ -2,6 +2,24 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://example.org/</loc>
+    <lastmod>2024-10-06T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/posts/</loc>
+    <lastmod>2024-10-06T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/shell-scripting/</loc>
+    <lastmod>2024-10-06T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/posts/2024/07-sep/2024-10-06_shell_script_xargs/</loc>
+    <lastmod>2024-10-06T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/</loc>
+    <lastmod>2024-10-06T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/xargs/</loc>
+    <lastmod>2024-10-06T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://example.org/posts/2024/07-sep/2024-09-28_osi_model/</loc>
     <lastmod>2024-09-28T00:00:00+00:00</lastmod>
   </url><url>
@@ -15,15 +33,6 @@
     <lastmod>2024-09-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/tags/osi-model/</loc>
-    <lastmod>2024-09-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/</loc>
-    <lastmod>2024-09-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/posts/</loc>
-    <lastmod>2024-09-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/</loc>
     <lastmod>2024-09-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/tags/batch-processing/</loc>
