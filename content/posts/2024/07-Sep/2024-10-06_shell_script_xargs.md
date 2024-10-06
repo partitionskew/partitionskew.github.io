@@ -76,8 +76,8 @@ This isn't an exhaustive list of all possible options. Refer to the manual page 
 
 xargs is not the right tool to substitute multiple arguments into a command in specific positions. In the examples I shared above, I showed how we can position an entire line in a specific spot in the command using the `-I` option.
 
-If your file contains multiple arguments per line, you'll want to prepare your command ahead of time using other tools like `sed` (stream editor), `awk`, or even `xargs` and then save it to a file. Once the commands are saved to a file, you can expect it for correctness and then pipe it into `xargs` to run.
+If your file contains multiple arguments per line, you'll want to prepare your command ahead of time using other tools like `sed` (stream editor), `awk`, or even `xargs` and then save it to a file. Once the commands are saved to a file, you can inspect it for correctness and then pipe it into `xargs` to run.
 
 ## Conclusion
 
-`xargs` is useful for automating bulk operations using commands that only accept arguments as input. Next time you want to repeat an action multiple times using slightly different arguments, but you can't pipe the arguments into the command, consider using `xargs`.
+`xargs` is useful for automating bulk operations using commands that only accept arguments as input. Next time you want to repeat an action multiple times using slightly different arguments - but you can't pipe the arguments into the command - consider using `xargs`.
