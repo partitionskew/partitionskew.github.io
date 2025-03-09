@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>Lambda vs. Kappa Architecture | Partition Skew</title>
 <meta name="keywords" content="batch processing, stream processing, lambda architecture, kappa architecture">
 <meta name="description" content="A brief description and comparison of lambda and kappa architectures">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:1313/posts/2024/09-sep/2024-09-22_stream_processing/">
+<link rel="canonical" href="https://example.org/posts/2024/09-sep/2024-09-22_stream_processing/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:1313/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/2024/09-sep/2024-09-22_stream_processing/">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/2024/09-sep/2024-09-22_stream_processing/">
 <noscript>
     <style>
         #theme-toggle,
@@ -55,7 +55,67 @@
         }
 
     </style>
-</noscript>
+</noscript><meta property="og:title" content="Lambda vs. Kappa Architecture" />
+<meta property="og:description" content="A brief description and comparison of lambda and kappa architectures" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/2024/09-sep/2024-09-22_stream_processing/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2024-09-22T00:00:00+00:00" />
+<meta property="article:modified_time" content="2024-09-22T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Lambda vs. Kappa Architecture"/>
+<meta name="twitter:description" content="A brief description and comparison of lambda and kappa architectures"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Lambda vs. Kappa Architecture",
+      "item": "https://example.org/posts/2024/09-sep/2024-09-22_stream_processing/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Lambda vs. Kappa Architecture",
+  "name": "Lambda vs. Kappa Architecture",
+  "description": "A brief description and comparison of lambda and kappa architectures",
+  "keywords": [
+    "batch processing", "stream processing", "lambda architecture", "kappa architecture"
+  ],
+  "articleBody": "Introduction In this article, I discuss and compare two big data architectures: Lambda \u0026 Kappa.\nA brief history In halcyon days of yore, data was collected in batches and processed using algorithms such as MapReduce (MR). Apache Hadoop was a popular batch processing framework that uses MR to crunch a lot of data on commodity hardware. Latencies on the order of hours or days was acceptable since the typical customer at the time expected daily, weekly, or even monthly reports.\nSuch a delay no longer cuts the mustard in today’s world where users want fresh data as soon as possible. If you’re ordering a taxi to get to the airport, you want to know what the expected travel time is right now so you don’t miss your flight. If you’re a trader, you want data as fast as possible to beat your competition. It’s no surprise that high-frequency trading firms situate their offices right next to a data center. This type of system is called real-time user-facing analytics.\nStream processing is like batch processing if each batch contained a single event and there were a never-ending stream of events. Latency is minimized since the event is processed as soon as it arrives rather than having to wait for some arbitrary time or size threshold.\nBig data architectures Lambda Architecture The first generation of stream processing technologies were less fault-tolerant and therefore traded low latency for inaccurate results [1]. For example, a streaming framework might provide an approximate result by computing a running average over the last 100 measurements of device temperatures. A batch process may elect to wait for a day’s worth of data before computing a more accurate result. If you retained historical data, it could compute an even more accurate result over a longer time horizon.\nLambda architecture was proposed to get the best of both worlds. Dual pipelines are deployed that process the same data source(s). One pipeline provides low-latency, approximate results using stream processing. The other pipeline processes historical batches to produce accurate results, albeit with significant delay. Whether the user gets approximate or accurate results depends on whether they’re querying recent or historical data.\nThe batch processing pipeline is also referred to as the cold path. Likewise, the stream processing layer is referred to as the hot path or speed layer.\nLooking at the diagram, I suppose it somewhat resembles a lambda if you rotate it clockwise. ¯_(ツ)_/¯\nAs one might surmise, there’s several major drawbacks to this architecture:\nComplexity: is your team prepared and capable of supporting two different pipelines Code duplication: business logic needs to be synchronized across pipelines otherwise results may differ in undesirable ways beyond accuracy Cost: after all, you’re processing the same data twice and that’s not even getting into the operational/toil side of things Newer generations of stream processing frameworks like Flink don’t have the same drawbacks as the first generation technologies. Flink is fault-tolerant and provides exactly-once state semantics. In fact, Flink can run in both batch and stream processing modes. Hence, you can get fresh and accurate results with Flink.\nWith technologies such as Flink, there’s no reason to run expensive, complex lambda architectures.\nKappa Architecture Kappa is a more modern architectural pattern enabled by technologies such as Apache Kafka and Apache Flink. The way it works is that data is streamed into an immutable, append-only event log (e.g. Kafka). The event log provides ordering, data partitioning, and persistence.\nInstead of running dual pipelines, you simply run a single stream processing framework that computes both accurate and low-latency results (e.g. Flink).\nTo enable data re-processing (in case you discover a bug or want to change your business logic), you can replay from the event log. However, it can be expensive to store a lot of historical data in a system like Kafka which keeps fresh data in memory and spills old data to disk. Hence, data is also archived to a cheap bulk storage system like S3 or GCS which Flink can easily replay.\nConclusion It’s interesting to see this exact evolution play out in my team. Roughly 5 years ago, we ran dual pipelines that provided hot data for the past couple hours and cold data for anything older than that. Today, we run a Kappa architecture that’s powered by Kafka and Flink. Of course, there’s certainly nuances in how we deal with late-arriving data or handle state at scale, but that’ll be a discussion for another day.\nAt any rate, I sure don’t miss having to develop and maintain two vastly different systems. One pipeline already keeps me plenty busy.\nReferences [1] Kleppmann, Martin. Chapter 12, Lambda Architecture. Designing Data-Intensive Applications, 2018 (4th edition), pages 497-498.\n[2] Tejada, Zoiner (2024, September 22nd). Big data architectures. Microsoft Learn. https://learn.microsoft.com/en-us/azure/architecture/databases/guide/big-data-architectures#kappa-architecture\n",
+  "wordCount" : "793",
+  "inLanguage": "en",
+  "datePublished": "2024-09-22T00:00:00Z",
+  "dateModified": "2024-09-22T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/2024/09-sep/2024-09-22_stream_processing/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Partition Skew",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
 </head>
 
 <body class="" id="top">
@@ -73,7 +133,7 @@
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:1313/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <a href="https://example.org/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -99,7 +159,7 @@
         </div>
         <ul id="menu">
             <li>
-                <a href="http://localhost:1313/tags/" title="tags">
+                <a href="https://example.org/tags/" title="tags">
                     <span>tags</span>
                 </a>
             </li>
@@ -186,17 +246,17 @@
 
   <footer class="post-footer">
     <ul class="post-tags">
-      <li><a href="http://localhost:1313/tags/batch-processing/">Batch Processing</a></li>
-      <li><a href="http://localhost:1313/tags/stream-processing/">Stream Processing</a></li>
-      <li><a href="http://localhost:1313/tags/lambda-architecture/">Lambda Architecture</a></li>
-      <li><a href="http://localhost:1313/tags/kappa-architecture/">Kappa Architecture</a></li>
+      <li><a href="https://example.org/tags/batch-processing/">Batch Processing</a></li>
+      <li><a href="https://example.org/tags/stream-processing/">Stream Processing</a></li>
+      <li><a href="https://example.org/tags/lambda-architecture/">Lambda Architecture</a></li>
+      <li><a href="https://example.org/tags/kappa-architecture/">Kappa Architecture</a></li>
     </ul>
   </footer>
 </article>
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://localhost:1313/">Partition Skew</a></span> · 
+        <span>&copy; 2025 <a href="https://example.org/">Partition Skew</a></span> · 
 
     <span>
         Powered by

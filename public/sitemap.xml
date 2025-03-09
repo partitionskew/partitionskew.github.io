@@ -2,72 +2,72 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://localhost:1313/</loc>
+    <loc>https://example.org/</loc>
     <lastmod>2025-03-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/</loc>
+    <loc>https://example.org/posts/</loc>
     <lastmod>2025-03-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/protobuf/</loc>
+    <loc>https://example.org/tags/protobuf/</loc>
     <lastmod>2025-03-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/2025/03-mar/2025-03-09_protobuf_immutability/</loc>
+    <loc>https://example.org/posts/2025/03-mar/2025-03-09_protobuf_immutability/</loc>
     <lastmod>2025-03-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/</loc>
+    <loc>https://example.org/tags/</loc>
     <lastmod>2025-03-09T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/shell-scripting/</loc>
+    <loc>https://example.org/tags/shell-scripting/</loc>
     <lastmod>2024-10-06T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/2024/10-oct/2024-10-06_shell_script_xargs/</loc>
+    <loc>https://example.org/posts/2024/10-oct/2024-10-06_shell_script_xargs/</loc>
     <lastmod>2024-10-06T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/xargs/</loc>
+    <loc>https://example.org/tags/xargs/</loc>
     <lastmod>2024-10-06T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/2024/09-sep/2024-09-28_osi_model/</loc>
+    <loc>https://example.org/posts/2024/09-sep/2024-09-28_osi_model/</loc>
     <lastmod>2024-09-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/introduction/</loc>
+    <loc>https://example.org/tags/introduction/</loc>
     <lastmod>2024-09-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/layered-architecture/</loc>
+    <loc>https://example.org/tags/layered-architecture/</loc>
     <lastmod>2024-09-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/networking/</loc>
+    <loc>https://example.org/tags/networking/</loc>
     <lastmod>2024-09-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/osi-model/</loc>
+    <loc>https://example.org/tags/osi-model/</loc>
     <lastmod>2024-09-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/batch-processing/</loc>
+    <loc>https://example.org/tags/batch-processing/</loc>
     <lastmod>2024-09-22T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/kappa-architecture/</loc>
+    <loc>https://example.org/tags/kappa-architecture/</loc>
     <lastmod>2024-09-22T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/lambda-architecture/</loc>
+    <loc>https://example.org/tags/lambda-architecture/</loc>
     <lastmod>2024-09-22T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/2024/09-sep/2024-09-22_stream_processing/</loc>
+    <loc>https://example.org/posts/2024/09-sep/2024-09-22_stream_processing/</loc>
     <lastmod>2024-09-22T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/stream-processing/</loc>
+    <loc>https://example.org/tags/stream-processing/</loc>
     <lastmod>2024-09-22T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/2024/09-sep/2024-09-14_networking_2/</loc>
+    <loc>https://example.org/posts/2024/09-sep/2024-09-14_networking_2/</loc>
     <lastmod>2024-09-13T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/dns/</loc>
+    <loc>https://example.org/tags/dns/</loc>
     <lastmod>2024-09-13T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/2024/09-sep/2024-09-07_networking_1/</loc>
+    <loc>https://example.org/posts/2024/09-sep/2024-09-07_networking_1/</loc>
     <lastmod>2024-09-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/ip-address/</loc>
+    <loc>https://example.org/tags/ip-address/</loc>
     <lastmod>2024-09-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/</loc>
+    <loc>https://example.org/categories/</loc>
   </url>
 </urlset>

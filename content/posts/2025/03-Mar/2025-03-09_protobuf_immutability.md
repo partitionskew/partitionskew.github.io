@@ -4,7 +4,7 @@ summary = 'A brief examination of Protobuf immutability and ways to work around 
 tags = ["protobuf"]
 date = 2025-03-09
 showToc = true
-draft = true
+draft = false
 +++
 
 ## Introduction

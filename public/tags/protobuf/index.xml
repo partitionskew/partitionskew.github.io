@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Protobuf on Partition Skew</title>
-    <link>http://localhost:1313/tags/protobuf/</link>
+    <link>https://example.org/tags/protobuf/</link>
     <description>Recent content in Protobuf on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 09 Mar 2025 00:00:00 +0000</lastBuildDate>
-    <atom:link href="http://localhost:1313/tags/protobuf/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://example.org/tags/protobuf/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Protobuf - Mutability</title>
-      <link>http://localhost:1313/posts/2025/03-mar/2025-03-09_protobuf_immutability/</link>
+      <link>https://example.org/posts/2025/03-mar/2025-03-09_protobuf_immutability/</link>
       <pubDate>Sun, 09 Mar 2025 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/posts/2025/03-mar/2025-03-09_protobuf_immutability/</guid>
+      <guid>https://example.org/posts/2025/03-mar/2025-03-09_protobuf_immutability/</guid>
       <description>A brief examination of Protobuf immutability and ways to work around it</description>
     </item>
   </channel>
