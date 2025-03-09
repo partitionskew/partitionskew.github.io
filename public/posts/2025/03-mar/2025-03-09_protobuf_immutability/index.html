@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Protobuf - Mutability | Partition Skew</title>
+<meta name="keywords" content="protobuf">
+<meta name="description" content="A brief examination of Protobuf immutability and ways to work around it">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:1313/posts/2025/03-mar/2025-03-09_protobuf_immutability/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/2025/03-mar/2025-03-09_protobuf_immutability/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/tags/" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Protobuf - Mutability
+      <span class="entry-hint" title="Draft">
+        <svg xmlns="http://www.w3.org/2000/svg" height="35" viewBox="0 -960 960 960" fill="currentColor">
+          <path
+            d="M160-410v-60h300v60H160Zm0-165v-60h470v60H160Zm0-165v-60h470v60H160Zm360 580v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q9 9 13 20t4 22q0 11-4.5 22.5T862.09-380L643-160H520Zm300-263-37-37 37 37ZM580-220h38l121-122-18-19-19-18-122 121v38Zm141-141-19-18 37 37-18-19Z" />
+        </svg>
+      </span>
+    </h1>
+    <div class="post-meta"><span title='2025-03-09 00:00:00 +0000 UTC'>March 9, 2025</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#introduction" aria-label="Introduction">Introduction</a></li>
+                <li>
+                    <a href="#immutability" aria-label="Immutability">Immutability</a><ul>
+                        
+                <li>
+                    <a href="#aliasing-bugs" aria-label="Aliasing bugs">Aliasing bugs</a></li>
+                <li>
+                    <a href="#uniqueness-in-collections" aria-label="Uniqueness in collections">Uniqueness in collections</a></li></ul>
+                </li>
+                <li>
+                    <a href="#mutating-protobuf-in-code" aria-label="Mutating Protobuf in code">Mutating Protobuf in code</a><ul>
+                        
+                <li>
+                    <a href="#use-proto-builders" aria-label="Use Proto builders">Use Proto builders</a></li>
+                <li>
+                    <a href="#use-a-pojo" aria-label="Use a POJO">Use a POJO</a></li></ul>
+                </li>
+                <li>
+                    <a href="#conclusion" aria-label="Conclusion">Conclusion</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
+<p>Protocol buffers (aka protobuf) is an efficient binary protocol for defining and exchanging structured data across languages and platforms. However, Protobuf is immutable. In this article, we discuss ways to support mutability when working with Protobuf data.</p>
+<h2 id="immutability">Immutability<a hidden class="anchor" aria-hidden="true" href="#immutability">#</a></h2>
+<p>Google, the original developers of Protobuf, made a design decision to enforce immutability of Protobuf messages. Google encountered a lot of subtle and not-so-subtle errors when they allowed Protobuf data to be modified as it transited through various systems. In fact, the earliest internal implementations of the Protocol specification in Java allowed the data to be mutated [1]. They felt the safety guarantees from making the data immutable outweighed the convenience of easily changing field values.</p>
+<p>Let&rsquo;s briefly examine some of the problems that can arise when the data is mutable [2].</p>
+<h3 id="aliasing-bugs">Aliasing bugs<a hidden class="anchor" aria-hidden="true" href="#aliasing-bugs">#</a></h3>
+<p>Martin Fowler describes a common bug that can arise when multiple references point to the same object in memory [3]. A change to the object&rsquo;s field by any reference will be reflected in all references since they point to the same object. Sometimes this is intentional and desired. Other times, this is unintentional since the programmer may have actually intended to create a <strong>deep copy</strong> of the object so that they can mutate the copy without changing the original.</p>
+<p>To avoid the <strong>aliasing bug</strong>, programmers should take care to deep copy the data when they&rsquo;re interested in the value(s) of the object and not the object itself. The obvious trade-off here is the extra CPU and memory required to assemble the copy.</p>
+<h3 id="uniqueness-in-collections">Uniqueness in collections<a hidden class="anchor" aria-hidden="true" href="#uniqueness-in-collections">#</a></h3>
+<p>Collections such as Java&rsquo;s HashMap or HashSet rely on immutable keys to ensure that inserted values can later be found. In the case of the HashSet, a hash code is calculated from the object. The hash code serves as the key to access the value in the underlying array. If we change the object and the change causes the hashcode to differ, then we will not be able to find the object in the hashset. The same applies for the hashmap.</p>
+<p>This does not mean the values have to be strictly immutable. It depends on the semantics of the domain object. It&rsquo;s possible the hash code is calculated on a subset of object properties that are immutable. However, it is generally safer to compute a hash code that takes into account all of the attributes of the object.</p>
+<h2 id="mutating-protobuf-in-code">Mutating Protobuf in code<a hidden class="anchor" aria-hidden="true" href="#mutating-protobuf-in-code">#</a></h2>
+<p>We discussed Protobuf immutability and some of the issues it tries to avoid. The natural question is - why would we want mutability? The simple answer is that data rarely remains static as it flows through a data pipeline. We may want to enrich the data with additional metadata, standardize certain fields, or anonymize/scrub personally identifiable information (PII) to remain compliant with regulations. Whatever the use case is, it&rsquo;s clear that mutability can be desirable if done carefully.</p>
+<p>Here&rsquo;s a couple ways we can achieve mutability.</p>
+<h3 id="use-proto-builders">Use Proto builders<a hidden class="anchor" aria-hidden="true" href="#use-proto-builders">#</a></h3>
+<p>While the Protobuf message itself may be immutable, Protobuf provides a <code>toBuilder()</code> method in the Message interface [4]. All generated code for your custom Protobuf message will implement the Message interface and therefore have access to the <code>toBuilder()</code> method. This method provides a Builder that is pre-loaded with the (nested) values of the given message. The Builder provides methods for getting, setting, and clearing values from any field or nested struct.</p>
+<p>Let&rsquo;s examine the following Proto schema:</p>
+<pre tabindex="0"><code>syntax = &#34;proto2&#34;;
+
+message Person {
+    optional string first_name = 1;
+    optional string last_name = 2;
+
+    optional Address address = 3;
+}
+
+message Address {
+    optional int32 house_number = 1;
+    optional string street = 2;
+    optional string city = 3;
+}
+</code></pre><p>Here&rsquo;s pseudocode for mutating an incoming Proto message.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Kotlin" data-lang="Kotlin"><span style="display:flex;"><span><span style="color:#66d9ef">val</span> bytes: ByteArray = <span style="color:#a6e22e">FileUtils</span>.readFileToByteArray(myFile)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">val</span> person: Person = <span style="color:#a6e22e">Person</span>.parseFrom(bytes) <span style="color:#75715e">// immutable
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">val</span> personBuilder = person.toBuilder()
+</span></span><span style="display:flex;"><span>personBuilder.setFirstName(person.firstName.uppercase())
+</span></span><span style="display:flex;"><span>personalBuilder.getAddressBuilder().setStreet(person.address.street.uppercase())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">val</span> uppercasedPerson = personBuilder.build()
+</span></span></code></pre></div><p>The example is trivial, but it illustrates how one can mutate a Proto message by creating a builder. It&rsquo;s clear from the code that we&rsquo;re modifying a builder and not the original object. Once we&rsquo;ve completed processing, we can generate the final Proto message by invoking the builder&rsquo;s <code>build()</code> method.</p>
+<p>The downside is that we&rsquo;ve created up to 2 additional objects that we have to store in memory - the builder and the modified message. If our application processes the incoming messages as a stream, this may not be too bad. If we process a big batch of messages, then our application can run out of memory if we&rsquo;re not careful.</p>
+<p>Additionally, the builder does not offer an easy way to serialize itself. This doesn&rsquo;t matter if the application is contained within a single JVM, but if we&rsquo;re using distributed frameworks like Flink, then the object needs to be serializable in order for the framework to transfer it from node to node. If this applies, refer to the next section for a suggested approach.</p>
+<h3 id="use-a-pojo">Use a POJO<a hidden class="anchor" aria-hidden="true" href="#use-a-pojo">#</a></h3>
+<p>The MessageBuilder interface is not serializable by default. It does not provide a convenient method for converting the builder to bytes and vice-versa. You could write a custom serializer that converts it to a Proto message and then to bytes. However, if the program performs multiple processing steps on different nodes, that conversion cost starts to add up for each additional serialization and deserialization that we have to do.</p>
+<p>A simpler approach is to convert the Message into a native data structure that the framework knows how to serialize. In the case of Flink, it supports various built-in types like Flink rows or POJOs [5]. Thus, we can deserialize a message into a POJO in our source function, carry the POJO from stage to stage, and then perform a final step to convert it back to a complete message in the sink function.</p>
+<p>We have not avoided the cost of converting the Proto message to a POJO (or equivalent in other, non-JVM languages), but we&rsquo;ve simplified the intra-service business logic. Now it&rsquo;s trivial to mutate the POJO. Furthermore, we can carefully control access to which fields can or can&rsquo;t be mutated in our POJO unlike Proto or its builder.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Kotlin" data-lang="Kotlin"><span style="display:flex;"><span><span style="color:#66d9ef">data</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PersonPojo</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">companion</span> <span style="color:#66d9ef">object</span> (
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">fromProto</span>(person: Person): { <span style="color:#f92672">..</span>. }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">toProto</span>(personPojo: PersonPojo) { <span style="color:#f92672">..</span>. }
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> firstName: String? = <span style="color:#66d9ef">null</span>, <span style="color:#75715e">// mutable
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">val</span> lastName: String? = <span style="color:#66d9ef">null</span>, <span style="color:#75715e">// immutable
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">val</span> address: Address? = <span style="color:#66d9ef">null</span>, <span style="color:#75715e">// immutable
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">data</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Address</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">val</span> houseNumber: Int? = <span style="color:#66d9ef">null</span>, <span style="color:#75715e">// immutable
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">var</span> street: String? = <span style="color:#66d9ef">null</span>, <span style="color:#75715e">// mutable
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">val</span> city: String? = <span style="color:#66d9ef">null</span> <span style="color:#75715e">// immutable
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>)
+</span></span></code></pre></div><p>And the corresponding pseudo-code for a hypothetical streaming framework:</p>
+<pre tabindex="0"><code>val byteStream: Stream&lt;ByteArray&gt; = HypotheticalFramework.readByteStream(myInputStream)
+val personStream: Stream&lt;Person&gt; = byteStream.apply(PersonPojoDeserializer())
+
+val personPojoStream: Stream&lt;PersonPojo&gt; = personStream.apply(PersonPojo::toPojo)
+val intermediateResult: Stream&lt;PersonPojo&gt; = personPojoStream.apply(SomeProcessing())
+val finalResult: Stream&lt;PersonPojo&gt; = intermediateResult.apply(SomeMoreProcessing())
+
+finalResult.sinkTo(MySinkFunction())
+</code></pre><p>In this example, the processing steps can happen on different nodes (and therefore different JVMs) so the stream elements need to be serializable by the framework.</p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>We learned that Proto is immutable by default to avoid common bugs. While Proto does offer a builder to mutate properties, it may be inefficient and require additional code for distributed frameworks.</p>
+<p>Alternatively, we can convert the Proto to a POJO from the wire. Within the business logic of the app, we work with the POJO. Once we&rsquo;ve finished processing the message, we simply convert it back to a Proto message before writing it back to the wire.</p>
+<h2 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h2>
+<p>[1] <a href="https://groups.google.com/g/protobuf/c/Fpl5EHHpLIM">https://groups.google.com/g/protobuf/c/Fpl5EHHpLIM</a></p>
+<p>[2] Yevsyukov, A., &amp; Dashenkov, D. (2025, March 9th). <em>Protobuf — Serialization and Beyond. Part 2: Immutability</em>. Medium. <a href="https://blog.teamdev.com/protobuf-immutability-3d7b4995712c">https://blog.teamdev.com/protobuf-immutability-3d7b4995712c</a></p>
+<p>[3] Fowler, M. (2025, March 9th). <em>Aliasing Bug</em>. Martin Fowler Blog. <a href="https://martinfowler.com/bliki/AliasingBug.html">https://martinfowler.com/bliki/AliasingBug.html</a></p>
+<p>[4] <a href="https://protobuf.dev/reference/java/java-generated/#builders">https://protobuf.dev/reference/java/java-generated/#builders</a></p>
+<p>[5] <a href="https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/dev/datastream/fault-tolerance/serialization/types_serialization/#supported-data-types">https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/dev/datastream/fault-tolerance/serialization/types_serialization/#supported-data-types</a></p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/tags/protobuf/">Protobuf</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="http://localhost:1313/">Partition Skew</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>
