@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Istio - Locality-based Load Balancing | Partition Skew</title>
+<meta name="keywords" content="istio, service mesh, load balancing">
+<meta name="description" content="What is locality based load balancing? When should it be enabled or disabled?">
+<meta name="author" content="">
+<link rel="canonical" href="https://example.org/posts/2025/03-mar/2025-03-16_istio_localiby_lb/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/2025/03-mar/2025-03-16_istio_localiby_lb/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Istio - Locality-based Load Balancing" />
+<meta property="og:description" content="What is locality based load balancing? When should it be enabled or disabled?" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/2025/03-mar/2025-03-16_istio_localiby_lb/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-03-16T00:00:00+00:00" />
+<meta property="article:modified_time" content="2025-03-16T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Istio - Locality-based Load Balancing"/>
+<meta name="twitter:description" content="What is locality based load balancing? When should it be enabled or disabled?"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Istio - Locality-based Load Balancing",
+      "item": "https://example.org/posts/2025/03-mar/2025-03-16_istio_localiby_lb/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Istio - Locality-based Load Balancing",
+  "name": "Istio - Locality-based Load Balancing",
+  "description": "What is locality based load balancing? When should it be enabled or disabled?",
+  "keywords": [
+    "istio", "service mesh", "load balancing"
+  ],
+  "articleBody": "Introduction Istio is an open-source service mesh with rich features and a steep learning curve. It’s an infrastructure layer deployed in a Kubernetes cluster to handle networking responsibilities such as mutual TLS, load balancing (LB), and traffic shifting. It offloads this responsibility from distributed applications which can then focus on core business logic. It’s analogous to the sidecar design pattern which offloads cross-cutting features such as logging or metrics from the app.\nIstio provides configurable traffic management through its various custom resource definitions (CRDs). In this article, we discuss the locality-based load balancing feature and when it should be used.\nLoad Balancing The DestinationRule CRD enables operators to define policies for traffic that is routed to a particular destination in the mesh. A key configuration is the load balancing algorithm. By default, Istio uses the least requests algorithm to route traffic to the destination instances [1].\napiVersion: networking.istio.io/v1 kind: DestinationRule metadata: name: dest-svc-destination-rule spec: host: dest-svc.prod.svc.cluster.local trafficPolicy: loadBalancer: simple: LEAST_REQUEST It is generally recommended to use the default setting as it produces the best results out of the box.\nLocality based load balancing We can further augment our traffic routing with locality-aware load balancing. First, a brief refresher on availability zones.\nAvailability Zones To achieve high availability (HA), applications are frequently deployed to multiple availability zones (AZ) within a given region. If one zone goes down, the service continues to serve traffic since the other zones are geographically isolated in the same region [2].\nA very marginal benefit is low latencies since traffic stays in a single AZ. However, AZs in a region are typically connected by redudant, high speed fiber. Cloud platforms generally strive for single-digit millisecond latencies across zones [3].\nThe more significant benefit is that network traffic that stays in a given zone does not incur data transfer costs. Cross-zonal network transfer costs can be non-trivial for high volume services. In the case of Kafka, it can account for as much as 88% of overall costs [4]. Hence, it’s an easy-to-overlook, but important, source of operational costs.\nLocality Based Load Balancing By default, Istio enables locality balanced load balancing in the global mesh configuration [5].\nIt can be selectively overridden for a particular service using the DestinationRule CRD mentioned earlier.\napiVersion: networking.istio.io/v1 kind: DestinationRule metadata: name: dest-svc-destination-rule spec: host: dest-svc.prod.svc.cluster.local trafficPolicy: loadBalancer: simple: LEAST_REQUEST localityLbSetting: enabled: true distribute: - from: us-west/zone1/* to: \"us-west/zone1/*\": 80 \"us-west/zone2/*\": 20 - from: us-west/zone2/* to: \"us-west/zone1/*\": 20 \"us-west/zone2/*\": 80 As we can see, the load balancer algorithm and locality-based load balancing feature are not mutually exclusive. They are complementary. The latter affects the proportion of traffic that goes to a particular zone based on the originating zone. The former further refines the traffic routing to the various endpoints/instances within a given zone.\nThe example above is taken from the official reference documentation [6]. In the example, we configured 80% of traffic originating from a given zone to be forwarded to the same zone. The remaining 20% is routed to the other zone.\nThere are two other mutually exclusive strategies other than distribute:\nfailover: traffic is routed to another region/zone when local endpoints are unhealthy requires outlier detection to be enabled failoverPriority: similar to failover, but allows specification of priority among the failover endpoints Unequal traffic routing One potential issue with locality-based load balancing is uneven distribution of traffic to the destination endpoints [7]. Imagine your destination service is deployed equally in 3 AZs. However, your source service may only be deployed in one of those zones. Alternatively, it may be deployed in all 3, but most pods are concentrated in one zone.\nWith locality-based load balancing, Istio prioritizes keeping traffic in the same zone. Consequently, the destination pods are overwhelmed with the majority of the traffic whereas the other two zones are underutilized. CPU-based auto-scaling will not help since it averages the CPU usage across all 3 zones. The average CPU usage could very easily end up below the threshold for scaling out. The end result is your overloaded pods start responding to requests with higher latencies as they become CPU-starved. In the worst case, they may even fail.\nFigure 1: Average requests/second received by destination pods in each zone.\nThe graph above depicts the average request rate to destination pods grouped by the AZ. Since most of the source pods are deployed in zone C, most of the traffic is routed to destination pods in zone C due to locality-based load balancing. The average request rate per pod in zone C is several times higher than pods in the other two zones.\nUpon disabling locality-based load balancing, the average request rate evens out across the zones. The trade-off is more cross-zonal network transfer and ever-so-slightly higher latencies. This trade-off is worth making if you have no control over the source deployment. If we could adjust the zonal distribution of source pods, then we should ensure the two mirror each other to avoid skew.\nConclusion Cross-zonal network transfer is a hidden, but hefty, charge when working with multi-zonal applications. Istio enables locality-based load balancing by default to ensure traffic stays within the same zone. However, Istio offers users the ability to fine-tune the distribution, only enable it during failover, or disable it altogether.\nWhen the source and destination zonal pod distributions do not match each other, it can lead to unequal traffic routing. In such cases, the distributions should either be adjusted to mirror each other or locality-based load balancing should be disabled altogether.\nFinally, locality-based load balancing is complementary to regular load balancing algorithms such as random, round-robin, or least requests. They work in conjunction to achieve optimal routing.\nReferences [1] https://istio.io/latest/docs/concepts/traffic-management/#load-balancing-options [2] https://en.wikipedia.org/wiki/Availability_zone [3] https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview?tabs=azure-cli#inter-zone-latency [4] https://www.confluent.io/blog/understanding-and-optimizing-your-kafka-costs-part-1-infrastructure/#networking [5] https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-locality_lb_setting [6] https://istio.io/latest/docs/reference/config/networking/destination-rule/#LocalityLoadBalancerSetting [7] https://github.com/istio/istio/issues/37231 ",
+  "wordCount" : "953",
+  "inLanguage": "en",
+  "datePublished": "2025-03-16T00:00:00Z",
+  "dateModified": "2025-03-16T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/2025/03-mar/2025-03-16_istio_localiby_lb/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Partition Skew",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://example.org/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://example.org/tags/" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Istio - Locality-based Load Balancing
+    </h1>
+    <div class="post-meta"><span title='2025-03-16 00:00:00 +0000 UTC'>March 16, 2025</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#introduction" aria-label="Introduction">Introduction</a></li>
+                <li>
+                    <a href="#load-balancing" aria-label="Load Balancing">Load Balancing</a></li>
+                <li>
+                    <a href="#locality-based-load-balancing" aria-label="Locality based load balancing">Locality based load balancing</a><ul>
+                        
+                <li>
+                    <a href="#availability-zones" aria-label="Availability Zones">Availability Zones</a></li>
+                <li>
+                    <a href="#locality-based-load-balancing-1" aria-label="Locality Based Load Balancing">Locality Based Load Balancing</a></li>
+                <li>
+                    <a href="#unequal-traffic-routing" aria-label="Unequal traffic routing">Unequal traffic routing</a></li></ul>
+                </li>
+                <li>
+                    <a href="#conclusion" aria-label="Conclusion">Conclusion</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
+<p><a href="https://istio.io/latest/about/service-mesh/">Istio</a> is an open-source service mesh with rich features and a steep learning curve. It&rsquo;s an infrastructure layer deployed in a Kubernetes cluster to handle networking responsibilities such as mutual TLS, load balancing (LB), and traffic shifting. It offloads this responsibility from distributed applications which can then focus on core business logic. It&rsquo;s analogous to the sidecar design pattern which offloads cross-cutting features such as logging or metrics from the app.</p>
+<p>Istio provides configurable traffic management through its various custom resource definitions (CRDs). In this article, we discuss the locality-based load balancing feature and when it should be used.</p>
+<h2 id="load-balancing">Load Balancing<a hidden class="anchor" aria-hidden="true" href="#load-balancing">#</a></h2>
+<p>The <code>DestinationRule</code> CRD enables operators to define policies for traffic that is routed to a particular destination in the mesh. A key configuration is the load balancing algorithm. By default, Istio uses the <code>least requests</code> algorithm to route traffic to the destination instances [1].</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">networking.istio.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">DestinationRule</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">dest-svc-destination-rule</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">host</span>: <span style="color:#ae81ff">dest-svc.prod.svc.cluster.local</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">trafficPolicy</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">loadBalancer</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">simple</span>: <span style="color:#ae81ff">LEAST_REQUEST</span>
+</span></span></code></pre></div><p>It is generally recommended to use the default setting as it produces the best results out of the box.</p>
+<h2 id="locality-based-load-balancing">Locality based load balancing<a hidden class="anchor" aria-hidden="true" href="#locality-based-load-balancing">#</a></h2>
+<p>We can further augment our traffic routing with locality-aware load balancing. First, a brief refresher on availability zones.</p>
+<h3 id="availability-zones">Availability Zones<a hidden class="anchor" aria-hidden="true" href="#availability-zones">#</a></h3>
+<p>To achieve high availability (HA), applications are frequently deployed to multiple availability zones (AZ) within a given region. If one zone goes down, the service continues to serve traffic since the other zones are geographically isolated in the same region [2].</p>
+<p>A very marginal benefit is low latencies since traffic stays in a single AZ. However, AZs in a region are typically connected by redudant, high speed fiber. Cloud platforms generally strive for single-digit millisecond latencies across zones [3].</p>
+<p>The more significant benefit is that network traffic that stays in a given zone does not incur data transfer costs. Cross-zonal network transfer costs can be non-trivial for high volume services. In the case of Kafka, it can account for as much as 88% of overall costs [4]. Hence, it&rsquo;s an easy-to-overlook, but important, source of operational costs.</p>
+<h3 id="locality-based-load-balancing-1">Locality Based Load Balancing<a hidden class="anchor" aria-hidden="true" href="#locality-based-load-balancing-1">#</a></h3>
+<p>By default, Istio enables locality balanced load balancing in the global mesh configuration [5].</p>
+<p>It can be selectively overridden for a particular service using the <code>DestinationRule</code> CRD mentioned earlier.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">networking.istio.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">DestinationRule</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">dest-svc-destination-rule</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">host</span>: <span style="color:#ae81ff">dest-svc.prod.svc.cluster.local</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">trafficPolicy</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">loadBalancer</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">simple</span>: <span style="color:#ae81ff">LEAST_REQUEST</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">localityLbSetting</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">distribute</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#f92672">from</span>: <span style="color:#ae81ff">us-west/zone1/*</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">to</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">&#34;us-west/zone1/*&#34;: </span><span style="color:#ae81ff">80</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">&#34;us-west/zone2/*&#34;: </span><span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>          - <span style="color:#f92672">from</span>: <span style="color:#ae81ff">us-west/zone2/*</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">to</span>:
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">&#34;us-west/zone1/*&#34;: </span><span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#f92672">&#34;us-west/zone2/*&#34;: </span><span style="color:#ae81ff">80</span>
+</span></span></code></pre></div><p>As we can see, the load balancer algorithm and locality-based load balancing feature are not mutually exclusive. They are complementary. The latter affects the proportion of traffic that goes to a particular zone based on the originating zone. The former further refines the traffic routing to the various endpoints/instances within a given zone.</p>
+<p>The example above is taken from the official reference documentation [6]. In the example, we configured 80% of traffic originating from a given zone to be forwarded to the same zone. The remaining 20% is routed to the other zone.</p>
+<p>There are two other mutually exclusive strategies other than distribute:</p>
+<ul>
+<li>failover: traffic is routed to another region/zone when local endpoints are unhealthy
+<ul>
+<li>requires outlier detection to be enabled</li>
+</ul>
+</li>
+<li>failoverPriority: similar to failover, but allows specification of priority among the failover endpoints</li>
+</ul>
+<h3 id="unequal-traffic-routing">Unequal traffic routing<a hidden class="anchor" aria-hidden="true" href="#unequal-traffic-routing">#</a></h3>
+<p>One potential issue with locality-based load balancing is uneven distribution of traffic to the destination endpoints [7]. Imagine your destination service is deployed equally in 3 AZs. However, your source service may only be deployed in one of those zones. Alternatively, it may be deployed in all 3, but most pods are concentrated in one zone.</p>
+<p>With locality-based load balancing, Istio prioritizes keeping traffic in the same zone. Consequently, the destination pods are overwhelmed with the majority of the traffic whereas the other two zones are underutilized. CPU-based auto-scaling will not help since it averages the CPU usage across all 3 zones. The average CPU usage could very easily end up below the threshold for scaling out. The end result is your overloaded pods start responding to requests with higher latencies as they become CPU-starved. In the worst case, they may even fail.</p>
+<p><img loading="lazy" src="/images/2025-03-15_locality_lb.png" alt="locality_based_load_balancing"  />
+
+<strong>Figure 1: Average requests/second received by destination pods in each zone.</strong></p>
+<p>The graph above depicts the average request rate to destination pods grouped by the AZ. Since most of the source pods are deployed in zone C, most of the traffic is routed to destination pods in zone C due to locality-based load balancing. The average request rate per pod in zone C is several times higher than pods in the other two zones.</p>
+<p>Upon disabling locality-based load balancing, the average request rate evens out across the zones. The trade-off is more cross-zonal network transfer and ever-so-slightly higher latencies. This trade-off is worth making if you have no control over the source deployment. If we could adjust the zonal distribution of source pods, then we should ensure the two mirror each other to avoid skew.</p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>Cross-zonal network transfer is a hidden, but hefty, charge when working with multi-zonal applications. Istio enables locality-based load balancing by default to ensure traffic stays within the same zone. However, Istio offers users the ability to fine-tune the distribution, only enable it during failover, or disable it altogether.</p>
+<p>When the source and destination zonal pod distributions do not match each other, it can lead to unequal traffic routing. In such cases, the distributions should either be adjusted to mirror each other or locality-based load balancing should be disabled altogether.</p>
+<p>Finally, locality-based load balancing is complementary to regular load balancing algorithms such as random, round-robin, or least requests. They work in conjunction to achieve optimal routing.</p>
+<h2 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h2>
+<ul>
+<li>[1] <a href="https://istio.io/latest/docs/concepts/traffic-management/#load-balancing-options">https://istio.io/latest/docs/concepts/traffic-management/#load-balancing-options</a></li>
+<li>[2] <a href="https://en.wikipedia.org/wiki/Availability_zone">https://en.wikipedia.org/wiki/Availability_zone</a></li>
+<li>[3] <a href="https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview?tabs=azure-cli#inter-zone-latency">https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview?tabs=azure-cli#inter-zone-latency</a></li>
+<li>[4] <a href="https://www.confluent.io/blog/understanding-and-optimizing-your-kafka-costs-part-1-infrastructure/#networking">https://www.confluent.io/blog/understanding-and-optimizing-your-kafka-costs-part-1-infrastructure/#networking</a></li>
+<li>[5] <a href="https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-locality_lb_setting">https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-locality_lb_setting</a></li>
+<li>[6] <a href="https://istio.io/latest/docs/reference/config/networking/destination-rule/#LocalityLoadBalancerSetting">https://istio.io/latest/docs/reference/config/networking/destination-rule/#LocalityLoadBalancerSetting</a></li>
+<li>[7] <a href="https://github.com/istio/istio/issues/37231">https://github.com/istio/istio/issues/37231</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://example.org/tags/istio/">Istio</a></li>
+      <li><a href="https://example.org/tags/service-mesh/">Service Mesh</a></li>
+      <li><a href="https://example.org/tags/load-balancing/">Load Balancing</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://example.org/">Partition Skew</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>
