@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Flink - Metaspace OOM and Dynamic Classloading | Partition Skew</title>
+<meta name="keywords" content="flink, jvm, classloader, oom">
+<meta name="description" content="Examining how Flink dynamically loads user code and how it can cause metaspace OOM errors">
+<meta name="author" content="">
+<link rel="canonical" href="https://example.org/posts/2025/03-mar/2025-03-25_flink_classloading/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/2025/03-mar/2025-03-25_flink_classloading/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Flink - Metaspace OOM and Dynamic Classloading" />
+<meta property="og:description" content="Examining how Flink dynamically loads user code and how it can cause metaspace OOM errors" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/2025/03-mar/2025-03-25_flink_classloading/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-03-25T00:00:00+00:00" />
+<meta property="article:modified_time" content="2025-03-25T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Flink - Metaspace OOM and Dynamic Classloading"/>
+<meta name="twitter:description" content="Examining how Flink dynamically loads user code and how it can cause metaspace OOM errors"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Flink - Metaspace OOM and Dynamic Classloading",
+      "item": "https://example.org/posts/2025/03-mar/2025-03-25_flink_classloading/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Flink - Metaspace OOM and Dynamic Classloading",
+  "name": "Flink - Metaspace OOM and Dynamic Classloading",
+  "description": "Examining how Flink dynamically loads user code and how it can cause metaspace OOM errors",
+  "keywords": [
+    "flink", "jvm", "classloader", "oom"
+  ],
+  "articleBody": "Introduction Flink is a distributed framework that supports both batch and stream-oriented processing paradigms. A Flink cluster consists of two core Java processes [1]:\nJobManagers: manages resources, schedules tasks, and handles failures and recovery TaskManagers: workers that read, process, and write data Improper configuration of a Flink application can lead to the dreaded OutOfMemory (OOM) error. In this article, we discuss how to avoid metaspace OOM errors when running a Flink cluster.\nDeployment Modes - Session vs. Application Flink supports two cluster deployment modes [2]:\nsession mode application mode In session mode, a Flink cluster runs continuously. Flink clients submit one or more jobs to the session cluster. The session cluster requests resources from the resource manager such as Yarn or Kubernetes in order to complete the job. Multiple jobs can run concurrently on a single session cluster. Likewise, the session cluster’s lifespan is independent of any job.\nIn contrast, an application cluster is tied to the lifecycle of its application. The application and its dependencies are bundled into the Flink cluster. When the application ends, so does the cluster.\nMetaspace OOM errors JVM Metaspace Java divides its process memory into the heap space and the off-heap space. The heap is managed by the JVM garbage collector (GC). If there are no more references to an object, it is removed from the heap.\nThe off-heap is divided into several segments that each store different things. One segment is the metaspace. The metaspace stores, among other things, the class metadata which contain descriptions of the classes used by the application [3]. The metaspace is also managed by the GC even though it is not part of the heap.\nHowever, lingering references can cause classes and classloaders to not be fully unloaded from the metaspace. As a result, JVM applications may run into OOM errors due metaspace memory usage.\nDynamic Class Loading in Flink Flink has 3 distinct locations where it loads classes used by the app:\nJava classpath: this also includes Flink’s /lib folder Flink plugins: aka the Flink /plugins folder Dynamic user code: part of the JARs of dynamically submitted jobs Classes in the Java classpath, the /libs folder, and the /plugins folder are loaded just once at cluster startup. However, user code from dynamically submitted jobs are loaded and unloaded based on the lifecycle of the job.\nOne subtle point is that these dynamic user classes are also loaded when a job fails or restarts from a checkpoint.\nIf the user classes do not correctly release objects that it has created over its lifetime, it can cause class leaks. This means that Flink’s user code class loader will not fully unload the classes and this will cause a memory leak over time.\nYou can verify the memory leak by monitoring the flink_taskmanager_status_jvm_memory_metaspace_used metric. For each failure or job restart, the metaspace memory usage will increase if classes are not fully unloaded.\nFixing metaspace OOM errors By default, the Flink task manager JVM metaspace is configured to 256 mb [4]. While we could increase this value to something larger, it merely delays the issue and does not resolve the root cause.\nThe fix is simple. If you’re running a Flink cluster in application mode, put your code in the /libs folder [5]. The classes will only be loaded once by the JVM and not reloaded each time the job fails or restarts.\nFROM flink:1.19.0-scala_2.12-java17 COPY target/my-app.jar $FLINK_HOME/lib/my-app.jar If you’re running jobs in session mode, double check that your classes are not holding onto resources or references such as JDBC connections [6].\nConclusion Flink dynamically loads user classes when jobs are submitted to a session cluster. Over time, this can cause metaspace OOM errors if the user classes are subsequently not properly unloaded.\nIf you’re running a Flink application cluster, put your JARs and dependencies in the /lib folder so that it’s only loaded once. If you’re running a session cluster, make sure your classes are not holding onto resources or object references.\nReferences [1] https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/concepts/flink-architecture/#anatomy-of-a-flink-cluster [2] https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/deployment/overview/#deployment-modes [3] https://www.baeldung.com/java-permgen-metaspace [4] https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/deployment/config/#taskmanager-memory-jvm-metaspace-size [5] https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/ops/debugging/debugging_classloading/#avoiding-dynamic-classloading-for-user-code [6] https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code ",
+  "wordCount" : "675",
+  "inLanguage": "en",
+  "datePublished": "2025-03-25T00:00:00Z",
+  "dateModified": "2025-03-25T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/2025/03-mar/2025-03-25_flink_classloading/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Partition Skew",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://example.org/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://example.org/tags/" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Flink - Metaspace OOM and Dynamic Classloading
+    </h1>
+    <div class="post-meta"><span title='2025-03-25 00:00:00 +0000 UTC'>March 25, 2025</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#introduction" aria-label="Introduction">Introduction</a></li>
+                <li>
+                    <a href="#deployment-modes---session-vs-application" aria-label="Deployment Modes - Session vs. Application">Deployment Modes - Session vs. Application</a></li>
+                <li>
+                    <a href="#metaspace-oom-errors" aria-label="Metaspace OOM errors">Metaspace OOM errors</a><ul>
+                        
+                <li>
+                    <a href="#jvm-metaspace" aria-label="JVM Metaspace">JVM Metaspace</a></li>
+                <li>
+                    <a href="#dynamic-class-loading-in-flink" aria-label="Dynamic Class Loading in Flink">Dynamic Class Loading in Flink</a></li>
+                <li>
+                    <a href="#fixing-metaspace-oom-errors" aria-label="Fixing metaspace OOM errors">Fixing metaspace OOM errors</a></li></ul>
+                </li>
+                <li>
+                    <a href="#conclusion" aria-label="Conclusion">Conclusion</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
+<p>Flink is a distributed framework that supports both batch and stream-oriented processing paradigms. A Flink cluster consists of two core Java processes [1]:</p>
+<ul>
+<li>JobManagers: manages resources, schedules tasks, and handles failures and recovery</li>
+<li>TaskManagers: workers that read, process, and write data</li>
+</ul>
+<p>Improper configuration of a Flink application can lead to the dreaded OutOfMemory (OOM) error. In this article, we discuss how to avoid metaspace OOM errors when running a Flink cluster.</p>
+<h2 id="deployment-modes---session-vs-application">Deployment Modes - Session vs. Application<a hidden class="anchor" aria-hidden="true" href="#deployment-modes---session-vs-application">#</a></h2>
+<p>Flink supports two cluster deployment modes [2]:</p>
+<ul>
+<li>session mode</li>
+<li>application mode</li>
+</ul>
+<p>In session mode, a Flink cluster runs continuously. Flink clients submit one or more jobs to the session cluster. The session cluster requests resources from the resource manager such as Yarn or Kubernetes in order to complete the job. Multiple jobs can run concurrently on a single session cluster. Likewise, the session cluster&rsquo;s lifespan is independent of any job.</p>
+<p>In contrast, an application cluster is tied to the lifecycle of its application. The application and its dependencies are bundled into the Flink cluster. When the application ends, so does the cluster.</p>
+<h2 id="metaspace-oom-errors">Metaspace OOM errors<a hidden class="anchor" aria-hidden="true" href="#metaspace-oom-errors">#</a></h2>
+<h3 id="jvm-metaspace">JVM Metaspace<a hidden class="anchor" aria-hidden="true" href="#jvm-metaspace">#</a></h3>
+<p>Java divides its process memory into the heap space and the off-heap space. The heap is managed by the JVM garbage collector (GC). If there are no more references to an object, it is removed from the heap.</p>
+<p>The off-heap is divided into several segments that each store different things. One segment is the metaspace. The <strong>metaspace</strong> stores, among other things, the class metadata which contain descriptions of the classes used by the application [3]. The metaspace is also managed by the GC even though it is not part of the heap.</p>
+<p>However, lingering references can cause classes and classloaders to not be fully unloaded from the metaspace. As a result, JVM applications may run into OOM errors due metaspace memory usage.</p>
+<h3 id="dynamic-class-loading-in-flink">Dynamic Class Loading in Flink<a hidden class="anchor" aria-hidden="true" href="#dynamic-class-loading-in-flink">#</a></h3>
+<p>Flink has 3 distinct locations where it loads classes used by the app:</p>
+<ul>
+<li>Java classpath: this also includes Flink&rsquo;s <code>/lib</code> folder</li>
+<li>Flink plugins: aka the Flink <code>/plugins</code> folder</li>
+<li>Dynamic user code: part of the JARs of dynamically submitted jobs</li>
+</ul>
+<p>Classes in the Java classpath, the <code>/libs</code> folder, and the <code>/plugins</code> folder are loaded just once at cluster startup. However, user code from dynamically submitted jobs are loaded and unloaded based on the lifecycle of the job.</p>
+<p><strong>One subtle point is that these dynamic user classes are also loaded when a job fails or restarts from a checkpoint.</strong></p>
+<p>If the user classes do not correctly release objects that it has created over its lifetime, it can cause class leaks. This means that Flink&rsquo;s user code class loader will not fully unload the classes and this will cause a memory leak over time.</p>
+<p>You can verify the memory leak by monitoring the <code>flink_taskmanager_status_jvm_memory_metaspace_used</code> metric. For each failure or job restart, the metaspace memory usage will increase if classes are not fully unloaded.</p>
+<h3 id="fixing-metaspace-oom-errors">Fixing metaspace OOM errors<a hidden class="anchor" aria-hidden="true" href="#fixing-metaspace-oom-errors">#</a></h3>
+<p>By default, the Flink task manager JVM metaspace is configured to 256 mb [4]. While we could increase this value to something larger, it merely delays the issue and does not resolve the root cause.</p>
+<p>The fix is simple. If you&rsquo;re running a Flink cluster in application mode, put your code in the <code>/libs</code> folder [5]. The classes will only be loaded once by the JVM and not reloaded each time the job fails or restarts.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-Dockerfile" data-lang="Dockerfile"><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> flink:1.19.0-scala_2.12-java17</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">COPY</span> target/my-app.jar $FLINK_HOME/lib/my-app.jar<span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><p>If you&rsquo;re running jobs in session mode, double check that your classes are not holding onto resources or references such as JDBC connections [6].</p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>Flink dynamically loads user classes when jobs are submitted to a session cluster. Over time, this can cause metaspace OOM errors if the user classes are subsequently not properly unloaded.</p>
+<p>If you&rsquo;re running a Flink application cluster, put your JARs and dependencies in the <code>/lib</code> folder so that it&rsquo;s only loaded once. If you&rsquo;re running a session cluster, make sure your classes are not holding onto resources or object references.</p>
+<h2 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h2>
+<ul>
+<li>[1] <a href="https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/concepts/flink-architecture/#anatomy-of-a-flink-cluster">https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/concepts/flink-architecture/#anatomy-of-a-flink-cluster</a></li>
+<li>[2] <a href="https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/deployment/overview/#deployment-modes">https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/deployment/overview/#deployment-modes</a></li>
+<li>[3] <a href="https://www.baeldung.com/java-permgen-metaspace">https://www.baeldung.com/java-permgen-metaspace</a></li>
+<li>[4] <a href="https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/deployment/config/#taskmanager-memory-jvm-metaspace-size">https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/deployment/config/#taskmanager-memory-jvm-metaspace-size</a></li>
+<li>[5] <a href="https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/ops/debugging/debugging_classloading/#avoiding-dynamic-classloading-for-user-code">https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/ops/debugging/debugging_classloading/#avoiding-dynamic-classloading-for-user-code</a></li>
+<li>[6] <a href="https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code">https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/ops/debugging/debugging_classloading/#unloading-of-dynamically-loaded-classes-in-user-code</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://example.org/tags/flink/">Flink</a></li>
+      <li><a href="https://example.org/tags/jvm/">Jvm</a></li>
+      <li><a href="https://example.org/tags/classloader/">Classloader</a></li>
+      <li><a href="https://example.org/tags/oom/">Oom</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://example.org/">Partition Skew</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

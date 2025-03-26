@@ -2,6 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://example.org/tags/classloader/</loc>
+    <lastmod>2025-03-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/flink/</loc>
+    <lastmod>2025-03-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/posts/2025/03-mar/2025-03-25_flink_classloading/</loc>
+    <lastmod>2025-03-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/jvm/</loc>
+    <lastmod>2025-03-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/oom/</loc>
+    <lastmod>2025-03-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/</loc>
+    <lastmod>2025-03-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/posts/</loc>
+    <lastmod>2025-03-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/</loc>
+    <lastmod>2025-03-25T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://example.org/tags/istio/</loc>
     <lastmod>2025-03-16T00:00:00+00:00</lastmod>
   </url><url>
@@ -11,16 +35,7 @@
     <loc>https://example.org/tags/load-balancing/</loc>
     <lastmod>2025-03-16T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://example.org/</loc>
-    <lastmod>2025-03-16T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/posts/</loc>
-    <lastmod>2025-03-16T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://example.org/tags/service-mesh/</loc>
-    <lastmod>2025-03-16T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/</loc>
     <lastmod>2025-03-16T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/tags/protobuf/</loc>

@@ -6,8 +6,15 @@
     <description>Recent content on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 16 Mar 2025 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 25 Mar 2025 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://example.org/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Flink - Metaspace OOM and Dynamic Classloading</title>
+      <link>https://example.org/posts/2025/03-mar/2025-03-25_flink_classloading/</link>
+      <pubDate>Tue, 25 Mar 2025 00:00:00 +0000</pubDate>
+      <guid>https://example.org/posts/2025/03-mar/2025-03-25_flink_classloading/</guid>
+      <description>Examining how Flink dynamically loads user code and how it can cause metaspace OOM errors</description>
+    </item>
     <item>
       <title>Istio - Locality-based Load Balancing</title>
       <link>https://example.org/posts/2025/03-mar/2025-03-16_istio_localiby_lb/</link>
