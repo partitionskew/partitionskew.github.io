@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Kafka on Partition Skew</title>
+    <link>https://example.org/tags/kafka/</link>
+    <description>Recent content in Kafka on Partition Skew</description>
+    <generator>Hugo -- 0.134.0</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 27 Apr 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://example.org/tags/kafka/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Kafka - Time and Retention</title>
+      <link>https://example.org/posts/2025/04-apr/2025-04-27_kafka_time_retention/</link>
+      <pubDate>Sun, 27 Apr 2025 00:00:00 +0000</pubDate>
+      <guid>https://example.org/posts/2025/04-apr/2025-04-27_kafka_time_retention/</guid>
+      <description>We discuss different types of timestamps associated with Kafka records and how it affects message retention</description>
+    </item>
+  </channel>
+</rss>

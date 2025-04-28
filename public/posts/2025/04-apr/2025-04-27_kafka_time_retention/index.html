@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Kafka - Time and Retention | Partition Skew</title>
+<meta name="keywords" content="kafka, time semantics">
+<meta name="description" content="We discuss different types of timestamps associated with Kafka records and how it affects message retention">
+<meta name="author" content="">
+<link rel="canonical" href="https://example.org/posts/2025/04-apr/2025-04-27_kafka_time_retention/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/2025/04-apr/2025-04-27_kafka_time_retention/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Kafka - Time and Retention" />
+<meta property="og:description" content="We discuss different types of timestamps associated with Kafka records and how it affects message retention" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/2025/04-apr/2025-04-27_kafka_time_retention/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-04-27T00:00:00+00:00" />
+<meta property="article:modified_time" content="2025-04-27T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Kafka - Time and Retention"/>
+<meta name="twitter:description" content="We discuss different types of timestamps associated with Kafka records and how it affects message retention"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Kafka - Time and Retention",
+      "item": "https://example.org/posts/2025/04-apr/2025-04-27_kafka_time_retention/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Kafka - Time and Retention",
+  "name": "Kafka - Time and Retention",
+  "description": "We discuss different types of timestamps associated with Kafka records and how it affects message retention",
+  "keywords": [
+    "kafka", "time semantics"
+  ],
+  "articleBody": "Introduction Apache Kafka is an open-source, distributed data streaming platform. Kafka data is stored durably and scalably in a multi-tier storage solution. What doesn’t fit in memory is spilled to disk. What is accessed infrequently in disk is moved to cheap, bulk storage like S3 or GCS.\nToday’s discussion focuses on how Kafka decides how long to store data, aka retention. We review core Kafka concepts, cover key configurations, and review unexpected behaviours that can arise with the default settings and in edge cases.\nTopics, partitions and log segments The core abstraction in Kafka is a topic. A topic is a collection of messages similar to a queue. A Kafka topic is divided into partitions for scalability. A single partition can fit on a Kafka broker, aka Kafka server, and is replicated across multiple brokers for durability.\nThe partition itself is further sub-divided into log segments. Each segment is an append-only log (AOL). New messages are added to the end of the log and the log is immutable once it is closed, aka rolling. There is only one active segment which can be read from and written to. Closed log segments are read-only.\nLog rolling is determined by size and/or time. By default, a log is closed once it reaches 1 GiB. This can be tuned using the log.segment.bytes broker config. Alternatively, or in addition, one can also specify the log.roll.(ms|hours) config. By default, it is set to 7 days to ensure that a segment is closed. This is useful if the topic doesn’t have much activity and won’t reach the size threshold any time soon.\nAs a side note, segments are also closed when their indexes reach the max configured size. When you increase the segment’s max size beyond ~5 GB, be sure to also increase the index’s max size too or the segment could be closed before it fills up. To learn more about indexes and time-indexes, read this excellent article by Strimzi [1].\nRetention To ensure that topics don’t grow indefinitely in size, specify a retention policy based on size and/or time. Most operators specify a size-based cap to ensure predictable behaviour since some topics can be very active whereas other topics are infrequently updated. However, the two retention settings are not mutually exclusive. Time-based retentions can ensure compliance with internal requirements or external regulations which specify a minimum or maximum time for which data must be retained.\nThe retention configs are:\nlog.retention.bytes: by default, there is no limit to the size of a Kafka topic log.retention.(ms|minutes|hours): by default, 7 days It is important to note that only closed segments are eligible for expiration. If a segment is active, it will not be considered for deletion even if it qualifies based on size and/or time.\nOnce a log segment has met the retention criteria, it’ll be subject to the cleanup policy:\ndelete (default): segments are deleted compact: only the latest message of a given key is retained Kafka will mark eligible, closed segments for deletion. These segments will linger around for up to log.retention.check.interval.ms (default: 5 minutes) before Kafka finally deletes it. However, in the meantime, it is no longer readable by consumers.\nKeep in mind that the retention time specifies a floor for the minimum time that a message will remain in a topic. The actual time that it takes for a message to be deleted can exceed the retention time because a segment has to be closed first before it can be marked for deletion. It then takes up to the retention check interval for the segment to actually be deleted.\nTimestamp Types The question naturally is: how does Kafka decide when a log segment is “old” enough to be deleted? The answer is that it boils down to the timestamp of the last record in the segment when it is closed. However, there’s a bit more nuance than that.\nKafka recognizes two different timestamp types:\nCreateTime (default): the producer-supplied timestamp is used by the broker; if the producer doesn’t set a timestamp, then the producer’s local time is substituted LogAppendTime: the broker overrides the producer timestamp with its own local time as it appends the record to the log The timestamp type is configured at the broker level via log.message.timestamp.type and can be overridden at the per-topic level via message.timestamp.type.\nIssues Let’s examine some of the pitfalls that can arise from blindly trusting producer timestamps.\nUnreliable producer timestamps Producer timestamps are unreliable. This is a bit of a generalization, but it’s especially true if the producer’s are external to your team or organization. Adversarial producers may deliberably set timestamps way into the past or far into the future. In more benign cases, a bug may have slipped into the code or the client’s host machine may have an unsychronized clock.\nIn any case, these scenarios pose a problem because old records are immediately subject to time-based retention (provided it ends up being the last record in the segment) and future records will linger around for far longer than they should.\nKafka partially solves this by allowing you to specify the maximum timestamp difference you’re willing to tolerate before dropping a message for being too old or for supposedly occurring in the future.\nlog.message.timestamp.after.max.ms (default: 1 hour): if the message’s timestamp is newer than the broker’s timestamp by this amount, the message is discarded for being from the future log.message.timestamp.before.max.ms (default: max long): if the message’s timestamp is older than the broker’s timestamp by this amount, the message is discarded for being too old In either case, the two configs only apply to CreateTime timestamps.\nPoisoned time indices Kafka also maintains a time index for each log segment. The time index maps a timestamp to a byte offset for its corresponding log segment. Older timestamps are ignored when adding to the time index, so out of order timestamps can cause the time index to become unreliable or poisoned. This makes it more challenging to confidently seek to a specific message in a topic when the timestamps do not monotonically increase as is the case with log-append time.\nPremature expiration Likewise, if your data pipeline preserves producer timestamps from topic to topic, then messages may be expired earlier than you expect. For example, you may have a dead letter queue that holds failed messages for up to 30 days. You want to replay data from 30 days ago back to the source topic to be retried by the application. However, the source topic only has 4 days of retention so it will most likely drop the messages right away as closed segments may have the last record timestamp from the past.\nWhat is the solution? CreateTime is typically fine if your producers are internal and you’re reasonably sure they produce reliable timestamps.\nOtherwise, strongly consider using LogAppendTime. This does not mean you have to sacrifice any notion of event time. Simply store it as a field in the message itself or as a Kafka message header. Kafka retention will therefore depend on the log append time to ensure that messages stay in the topic for the expected amount of time, but your applications continue to process the data based on event time if that’s more important.\nIf you prefer to keep the default setting but want to keep new records around for the expected time, you can also null out the input timestamp as you write out the new record. The producer will substitute with the local producer time. However, you’ll have to evaluate which services should preserve timestamps and which services should override/unset timestamps. Or you can keep it simple by having new messages have new timestamps. Again, you’ll need to store the event time somewhere else to ensure you don’t lose it.\nConclusion We discussed how messages are grouped into topics, topics are divided into partitions, and partitions are composed of segments. We then examined when and why a segment is closed, and how closed segments can be expired to save space.\nFinally, we considered different types of Kafka timestamps and how that can impact retention in unexpected ways. While CreateTime is the default, it doesn’t always make sense given unreliable producer timestamps or certain edge cases like replaying a topic whilst preserving the timestamp. Use LogAppendTime in conjunction with an event time field in the message or Kafka message headers to get the best of both worlds.\nReferences [1] https://strimzi.io/blog/2021/12/17/kafka-segment-retention/ [2] https://www.redpanda.com/guides/kafka-performance-kafka-logs [3] https://www.redpanda.com/guides/kafka-alternatives-kafka-retention ",
+  "wordCount" : "1401",
+  "inLanguage": "en",
+  "datePublished": "2025-04-27T00:00:00Z",
+  "dateModified": "2025-04-27T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/2025/04-apr/2025-04-27_kafka_time_retention/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Partition Skew",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://example.org/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://example.org/tags/" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Kafka - Time and Retention
+    </h1>
+    <div class="post-meta"><span title='2025-04-27 00:00:00 +0000 UTC'>April 27, 2025</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#introduction" aria-label="Introduction">Introduction</a></li>
+                <li>
+                    <a href="#topics-partitions-and-log-segments" aria-label="Topics, partitions and log segments">Topics, partitions and log segments</a></li>
+                <li>
+                    <a href="#retention" aria-label="Retention">Retention</a></li>
+                <li>
+                    <a href="#timestamp-types" aria-label="Timestamp Types">Timestamp Types</a></li>
+                <li>
+                    <a href="#issues" aria-label="Issues">Issues</a><ul>
+                        
+                <li>
+                    <a href="#unreliable-producer-timestamps" aria-label="Unreliable producer timestamps">Unreliable producer timestamps</a></li>
+                <li>
+                    <a href="#poisoned-time-indices" aria-label="Poisoned time indices">Poisoned time indices</a></li>
+                <li>
+                    <a href="#premature-expiration" aria-label="Premature expiration">Premature expiration</a></li></ul>
+                </li>
+                <li>
+                    <a href="#what-is-the-solution" aria-label="What is the solution?">What is the solution?</a></li>
+                <li>
+                    <a href="#conclusion" aria-label="Conclusion">Conclusion</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
+<p>Apache Kafka is an open-source, distributed data streaming platform. Kafka data is stored durably and scalably in a multi-tier storage solution. What doesn&rsquo;t fit in memory is spilled to disk. What is accessed infrequently in disk is moved to cheap, bulk storage like S3 or GCS.</p>
+<p>Today&rsquo;s discussion focuses on how Kafka decides how long to store data, aka retention. We review core Kafka concepts, cover key configurations, and review unexpected behaviours that can arise with the default settings and in edge cases.</p>
+<h2 id="topics-partitions-and-log-segments">Topics, partitions and log segments<a hidden class="anchor" aria-hidden="true" href="#topics-partitions-and-log-segments">#</a></h2>
+<p>The core abstraction in Kafka is a topic. A <strong>topic</strong> is a collection of messages similar to a queue. A Kafka topic is divided into partitions for scalability. A single partition can fit on a Kafka broker, aka Kafka server, and is replicated across multiple brokers for durability.</p>
+<p>The partition itself is further sub-divided into <strong>log segments</strong>. Each segment is an append-only log (AOL). New messages are added to the end of the log and the log is immutable once it is closed, aka rolling. There is only one active segment which can be read from and written to. Closed log segments are read-only.</p>
+<p>Log rolling is determined by size and/or time. By default, a log is closed once it reaches 1 GiB. This can be tuned using the <code>log.segment.bytes</code> broker config. Alternatively, or in addition, one can also specify the <code>log.roll.(ms|hours)</code> config. By default, it is set to 7 days to ensure that a segment is closed. This is useful if the topic doesn&rsquo;t have much activity and won&rsquo;t reach the size threshold any time soon.</p>
+<p>As a side note, segments are also closed when their indexes reach the max configured size. When you increase the segment&rsquo;s max size beyond ~5 GB, be sure to also increase the index&rsquo;s max size too or the segment could be closed before it fills up. To learn more about indexes and time-indexes, read this excellent article by Strimzi [1].</p>
+<h2 id="retention">Retention<a hidden class="anchor" aria-hidden="true" href="#retention">#</a></h2>
+<p>To ensure that topics don&rsquo;t grow indefinitely in size, specify a <strong>retention policy</strong> based on size and/or time. Most operators specify a size-based cap to ensure predictable behaviour since some topics can be very active whereas other topics are infrequently updated. However, the two retention settings are not mutually exclusive. Time-based retentions can ensure compliance with internal requirements or external regulations which specify a minimum or maximum time for which data must be retained.</p>
+<p>The retention configs are:</p>
+<ul>
+<li><code>log.retention.bytes</code>: by default, there is no limit to the size of a Kafka topic</li>
+<li><code>log.retention.(ms|minutes|hours)</code>: by default, 7 days</li>
+</ul>
+<p>It is important to note that only closed segments are eligible for expiration. If a segment is active, it will not be considered for deletion even if it qualifies based on size and/or time.</p>
+<p>Once a log segment has met the retention criteria, it&rsquo;ll be subject to the <strong>cleanup policy</strong>:</p>
+<ul>
+<li>delete (default): segments are deleted</li>
+<li>compact: only the latest message of a given key is retained</li>
+</ul>
+<p>Kafka will mark eligible, closed segments for deletion. These segments will linger around for up to <code>log.retention.check.interval.ms</code> (default: 5 minutes) before Kafka finally deletes it. However, in the meantime, it is no longer readable by consumers.</p>
+<p>Keep in mind that the retention time specifies a floor for the minimum time that a message will remain in a topic. The actual time that it takes for a message to be deleted can exceed the retention time because a segment has to be closed first before it can be marked for deletion. It then takes up to the retention check interval for the segment to actually be deleted.</p>
+<h2 id="timestamp-types">Timestamp Types<a hidden class="anchor" aria-hidden="true" href="#timestamp-types">#</a></h2>
+<p>The question naturally is: how does Kafka decide when a log segment is &ldquo;old&rdquo; enough to be deleted? The answer is that it boils down to the timestamp of the last record in the segment when it is closed. However, there&rsquo;s a bit more nuance than that.</p>
+<p>Kafka recognizes two different <strong>timestamp types</strong>:</p>
+<ul>
+<li>CreateTime (default): the producer-supplied timestamp is used by the broker; if the producer doesn&rsquo;t set a timestamp, then the producer&rsquo;s local time is substituted</li>
+<li>LogAppendTime: the broker overrides the producer timestamp with its own local time as it appends the record to the log</li>
+</ul>
+<p>The timestamp type is configured at the broker level via <code>log.message.timestamp.type</code> and can be overridden at the per-topic level via <code>message.timestamp.type</code>.</p>
+<h2 id="issues">Issues<a hidden class="anchor" aria-hidden="true" href="#issues">#</a></h2>
+<p>Let&rsquo;s examine some of the pitfalls that can arise from blindly trusting producer timestamps.</p>
+<h3 id="unreliable-producer-timestamps">Unreliable producer timestamps<a hidden class="anchor" aria-hidden="true" href="#unreliable-producer-timestamps">#</a></h3>
+<p>Producer timestamps are unreliable. This is a bit of a generalization, but it&rsquo;s especially true if the producer&rsquo;s are external to your team or organization. Adversarial producers may deliberably set timestamps way into the past or far into the future. In more benign cases, a bug may have slipped into the code or the client&rsquo;s host machine may have an unsychronized clock.</p>
+<p>In any case, these scenarios pose a problem because old records are immediately subject to time-based retention (provided it ends up being the last record in the segment) and future records will linger around for far longer than they should.</p>
+<p>Kafka partially solves this by allowing you to specify the maximum timestamp difference you&rsquo;re willing to tolerate before dropping a message for being too old or for supposedly occurring in the future.</p>
+<ul>
+<li><code>log.message.timestamp.after.max.ms</code> (default: 1 hour): if the message&rsquo;s timestamp is newer than the broker&rsquo;s timestamp by this amount, the message is discarded for being from the future</li>
+<li><code>log.message.timestamp.before.max.ms</code> (default: max long): if the message&rsquo;s timestamp is older than the broker&rsquo;s timestamp by this amount, the message is discarded for being too old</li>
+</ul>
+<p>In either case, the two configs only apply to <code>CreateTime</code> timestamps.</p>
+<h3 id="poisoned-time-indices">Poisoned time indices<a hidden class="anchor" aria-hidden="true" href="#poisoned-time-indices">#</a></h3>
+<p>Kafka also maintains a time index for each log segment. The time index maps a timestamp to a byte offset for its corresponding log segment. Older timestamps are ignored when adding to the time index, so out of order timestamps can cause the time index to become unreliable or poisoned. This makes it more challenging to confidently seek to a specific message in a topic when the timestamps do not monotonically increase as is the case with log-append time.</p>
+<h3 id="premature-expiration">Premature expiration<a hidden class="anchor" aria-hidden="true" href="#premature-expiration">#</a></h3>
+<p>Likewise, if your data pipeline preserves producer timestamps from topic to topic, then messages may be expired earlier than you expect. For example, you may have a dead letter queue that holds failed messages for up to 30 days. You want to replay data from 30 days ago back to the source topic to be retried by the application. However, the source topic only has 4 days of retention so it will most likely drop the messages right away as closed segments may have the last record timestamp from the past.</p>
+<h2 id="what-is-the-solution">What is the solution?<a hidden class="anchor" aria-hidden="true" href="#what-is-the-solution">#</a></h2>
+<p><code>CreateTime</code> is typically fine if your producers are internal and you&rsquo;re reasonably sure they produce reliable timestamps.</p>
+<p>Otherwise, strongly consider using <code>LogAppendTime</code>. This does not mean you have to sacrifice any notion of event time. Simply store it as a field in the message itself or as a Kafka message header. Kafka retention will therefore depend on the log append time to ensure that messages stay in the topic for the expected amount of time, but your applications continue to process the data based on event time if that&rsquo;s more important.</p>
+<p>If you prefer to keep the default setting but want to keep new records around for the expected time, you can also null out the input timestamp as you write out the new record. The producer will substitute with the local producer time. However, you&rsquo;ll have to evaluate which services should preserve timestamps and which services should override/unset timestamps. Or you can keep it simple by having new messages have new timestamps. Again, you&rsquo;ll need to store the event time somewhere else to ensure you don&rsquo;t lose it.</p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>We discussed how messages are grouped into topics, topics are divided into partitions, and partitions are composed of segments. We then examined when and why a segment is closed, and how closed segments can be expired to save space.</p>
+<p>Finally, we considered different types of Kafka timestamps and how that can impact retention in unexpected ways. While <code>CreateTime</code> is the default, it doesn&rsquo;t always make sense given unreliable producer timestamps or certain edge cases like replaying a topic whilst preserving the timestamp. Use <code>LogAppendTime</code> in conjunction with an event time field in the message or Kafka message headers to get the best of both worlds.</p>
+<h2 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h2>
+<ul>
+<li>[1] <a href="https://strimzi.io/blog/2021/12/17/kafka-segment-retention/">https://strimzi.io/blog/2021/12/17/kafka-segment-retention/</a></li>
+<li>[2] <a href="https://www.redpanda.com/guides/kafka-performance-kafka-logs">https://www.redpanda.com/guides/kafka-performance-kafka-logs</a></li>
+<li>[3] <a href="https://www.redpanda.com/guides/kafka-alternatives-kafka-retention">https://www.redpanda.com/guides/kafka-alternatives-kafka-retention</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://example.org/tags/kafka/">Kafka</a></li>
+      <li><a href="https://example.org/tags/time-semantics/">Time Semantics</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://example.org/">Partition Skew</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>
