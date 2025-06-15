@@ -6,8 +6,15 @@
     <description>Recent content in Posts on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 27 Apr 2025 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 15 Jun 2025 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://example.org/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Code Scaffolding - Cookiecutter and Copier</title>
+      <link>https://example.org/posts/2025/06-jun/2025-06-15_code_scaffolding/</link>
+      <pubDate>Sun, 15 Jun 2025 00:00:00 +0000</pubDate>
+      <guid>https://example.org/posts/2025/06-jun/2025-06-15_code_scaffolding/</guid>
+      <description>Skip the boilerplate by rendering your projects from templates</description>
+    </item>
     <item>
       <title>Kafka - Time and Retention</title>
       <link>https://example.org/posts/2025/04-apr/2025-04-27_kafka_time_retention/</link>
