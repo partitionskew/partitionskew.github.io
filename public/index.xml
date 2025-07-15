@@ -6,8 +6,15 @@
     <description>Recent content on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 15 Jun 2025 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 15 Jul 2025 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://example.org/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Small Files Problem</title>
+      <link>https://example.org/posts/2025/07-jul/2025-07-14_small_files_problem/</link>
+      <pubDate>Tue, 15 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>https://example.org/posts/2025/07-jul/2025-07-14_small_files_problem/</guid>
+      <description>What is the small files problem and how to solve it.</description>
+    </item>
     <item>
       <title>Code Scaffolding - Cookiecutter and Copier</title>
       <link>https://example.org/posts/2025/06-jun/2025-06-15_code_scaffolding/</link>

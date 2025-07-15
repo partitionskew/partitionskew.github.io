@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Small Files Problem | Partition Skew</title>
+<meta name="keywords" content="big data, optimization, small files problem, delta, data lake">
+<meta name="description" content="What is the small files problem and how to solve it.">
+<meta name="author" content="">
+<link rel="canonical" href="https://example.org/posts/2025/07-jul/2025-07-14_small_files_problem/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/2025/07-jul/2025-07-14_small_files_problem/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Small Files Problem" />
+<meta property="og:description" content="What is the small files problem and how to solve it." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/2025/07-jul/2025-07-14_small_files_problem/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-07-15T00:00:00+00:00" />
+<meta property="article:modified_time" content="2025-07-15T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Small Files Problem"/>
+<meta name="twitter:description" content="What is the small files problem and how to solve it."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Small Files Problem",
+      "item": "https://example.org/posts/2025/07-jul/2025-07-14_small_files_problem/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Small Files Problem",
+  "name": "Small Files Problem",
+  "description": "What is the small files problem and how to solve it.",
+  "keywords": [
+    "big data", "optimization", "small files problem", "delta", "data lake"
+  ],
+  "articleBody": "Small Files Problem The small files problem is, as its moniker suggests, one of IO overhead.\nIn a typical streaming data lake architecture, a connector writes small batches of files to an object store such as S3 or GCS on some cadence. The file tends to be an analytics-friendly, columnar file format such as Parquet or ORC. The threshold could be based on:\nthe size of the file the number of records/rows, time or some combination of the triggers. To keep latency low, a connector might be configured to write out a new file every minute. With this configuration, the connector would generate 1440 files per day. Increase the threshold to once every 3 minutes, and we decrease the number of files down to 480 at the expense of a bit more latency. Keep in mind this is only for one table with one partition!\nBy building a data warehouse on top of vanilla Parquet using a technology such as Apache Hive, we can process the data using distributed engines such as Spark and familiar languages such as SQL. To query the data, we need to open quite a bit of files. This can slow down query performance as the processing engine needs to do a lot of IO. Even for newer table formats like Iceberg or Delta, many small files would generate more metadata to keep track of them all [1].\nIt’s therefore in our best interest to compact the small files into bigger files to improve IO and to decrease the amount of metadata we need to track.\nHive Partitions As an aside, Hive tables can be physically partitioned using a key-value pair as part of the file path\ngs://my-bucket/my_prefix/date=2025-07-14/cohort=blue/(.*).parquet\nIn the example above, the Hive table has 2 partitions: (1) date and (2) cohort. By including the partitions in our HiveQL query, we can cut down on the number of files we need to open rather than doing a full table scan.\nSolutions Small files can be compacted manually or automated.\nCompaction One option is to build a custom compaction solution using a distributed processing framework such as Spark. With Spark, you can read the Parquet files into a dataframe and then write out a smaller number of files using the repartition method [2].\nThe repartition method will hash the rows and sort them into the corresponding partitions. You can decide how many partitions you want. Databricks recommends targeting file sizes of ~1GB as those have been observed to perform optimally across most workloads. File sizes in the hundreds of megabytes are fine too, but you’ll want to avoid file sizes smaller than 8MB to avoid IO overhead [3].\nThis job can be scheduled on an interval or run ad-hoc as needed. It just depends on how much data your producers generate. If a table grows slowly and the typical query focusses on a small number of partitions, you can schedule more infrequent compactions (e.g. weekly). Otherwise, you may consider more frequent compactions such as hourly or daily compactions. You’ll also likely need to restructure your physical storage structure if you’re using Hive.\nThe important thing is to ensure that the operation is atomic and isolated so that your customers don’t see incomplete results. The repartition should either succeed and result in fewer files or fail. However, in neither case should customers see duplicated data or partial data.\nIf the compaction is performed in-place, consider keeping a manifest of old files so we can record what should be deleted later. However, it’s harder to guarantee atomicity when we try to change the files in place. Alternatively, we can add an additional subdirectory to our partition locations to separate uncompacted data with compacted data. This allows us to perform the compaction in a safe, atomic step. If the compaction succeeds, we update the partition path location. If it fails, we don’t update the path and try again later. However, if you go down this path, do note that Hive does not handle non-compliant partition paths very well. Any path that contains an infix or suffix that does not follow the key=value convention is not compliant with Hive partition paths. Consequently, Hive cannot autodiscover these paths using commands such as MSCK REPAIR TABLE [4]. We can safely clean up the old, uncompacted data using a clean up job. Or we can use bucket lifecycle retention policies to clean up the data after X days. Delta Lake Optimize If you’re using a fancy open table format like Delta Lake, it supports compaction out of the box with the OPTIMIZE command [1]. This command automatically reduces the number of files by coalescing them to ~1GB files. This feature can save you the effort of having to author your own compaction job and scheduling it to run on a cadence. You can also easily configure the file sizes that are targetted by the command.\nBy default, optimize works on all historical data. To save a bit of compute, you can configure it to compact incrementally on new data instead of wasting resources on older data which is likely already compacted.\nThe benefits of this command compared to a custom solution is that it’s atomic and less error prone. It can be annoying to track and troubleshoot compaction failures when you have many tables and even more partitions.\nConclusion The small files problem happens when you stream data into a data lake. To minimize latency for consumers and readers, we try to write data as frequently as possible. However, each file tends to be small and many files need to be opened by a processing engine to find the desired data.\nTo avoid small files, we can increase the flush cadence as high as our customers are willing to tolerate. When that isn’t enough, we should consider a custom compaction job (e.g. Spark) or use optimize command if we’re using Delta Lake. Aim for files that are ~1GB after compaction.\nReferences [1] https://delta.io/blog/2023-01-25-delta-lake-small-file-compaction-optimize/ [2] https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.repartition.html [3] https://docs.databricks.com/aws/en/optimizations/spark-ui-guide/slow-spark-stage-low-io#reading-a-lot-of-small-files [4] https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-repair-table ",
+  "wordCount" : "996",
+  "inLanguage": "en",
+  "datePublished": "2025-07-15T00:00:00Z",
+  "dateModified": "2025-07-15T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/2025/07-jul/2025-07-14_small_files_problem/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Partition Skew",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://example.org/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://example.org/tags/" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Small Files Problem
+    </h1>
+    <div class="post-meta"><span title='2025-07-15 00:00:00 +0000 UTC'>July 15, 2025</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#small-files-problem" aria-label="Small Files Problem">Small Files Problem</a><ul>
+                        
+                <li>
+                    <a href="#hive-partitions" aria-label="Hive Partitions">Hive Partitions</a></li></ul>
+                </li>
+                <li>
+                    <a href="#solutions" aria-label="Solutions">Solutions</a><ul>
+                        
+                <li>
+                    <a href="#compaction" aria-label="Compaction">Compaction</a></li>
+                <li>
+                    <a href="#delta-lake-optimize" aria-label="Delta Lake Optimize">Delta Lake Optimize</a></li></ul>
+                </li>
+                <li>
+                    <a href="#conclusion" aria-label="Conclusion">Conclusion</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="small-files-problem">Small Files Problem<a hidden class="anchor" aria-hidden="true" href="#small-files-problem">#</a></h2>
+<p>The small files problem is, as its moniker suggests, one of IO overhead.</p>
+<p>In a typical streaming data lake architecture, a connector writes small batches of files to an object store such as S3 or GCS on some cadence. The file tends to be an analytics-friendly, columnar file format such as Parquet or ORC. The threshold could be based on:</p>
+<ul>
+<li>the size of the file</li>
+<li>the number of records/rows,</li>
+<li>time</li>
+<li>or some combination of the triggers.</li>
+</ul>
+<p>To keep latency low, a connector might be configured to write out a new file every minute. With this configuration, the connector would generate 1440 files per day. Increase the threshold to once every 3 minutes, and we decrease the number of files down to 480 at the expense of a bit more latency. Keep in mind this is only for one table with one partition!</p>
+<p>By building a data warehouse on top of vanilla Parquet using a technology such as Apache Hive, we can process the data using distributed engines such as Spark and familiar languages such as SQL. To query the data, we need to open quite a bit of files. This can slow down query performance as the processing engine needs to do a lot of IO. Even for newer table formats like Iceberg or Delta, many small files would generate more metadata to keep track of them all [1].</p>
+<p>It&rsquo;s therefore in our best interest to compact the small files into bigger files to improve IO and to decrease the amount of metadata we need to track.</p>
+<h3 id="hive-partitions">Hive Partitions<a hidden class="anchor" aria-hidden="true" href="#hive-partitions">#</a></h3>
+<p>As an aside, Hive tables can be physically partitioned using a key-value pair as part of the file path</p>
+<blockquote>
+<p>gs://my-bucket/my_prefix/date=2025-07-14/cohort=blue/(.*).parquet</p>
+</blockquote>
+<p>In the example above, the Hive table has 2 partitions: (1) date and (2) cohort. By including the partitions in our HiveQL query, we can cut down on the number of files we need to open rather than doing a full table scan.</p>
+<h2 id="solutions">Solutions<a hidden class="anchor" aria-hidden="true" href="#solutions">#</a></h2>
+<p>Small files can be compacted manually or automated.</p>
+<h3 id="compaction">Compaction<a hidden class="anchor" aria-hidden="true" href="#compaction">#</a></h3>
+<p>One option is to build a custom compaction solution using a distributed processing framework such as Spark. With Spark, you can read the Parquet files into a dataframe and then write out a smaller number of files using the <code>repartition</code> method [2].</p>
+<p>The repartition method will hash the rows and sort them into the corresponding partitions. You can decide how many partitions you want. Databricks recommends targeting file sizes of ~1GB as those have been observed to perform optimally across most workloads. File sizes in the hundreds of megabytes are fine too, but you&rsquo;ll want to avoid file sizes smaller than 8MB to avoid IO overhead [3].</p>
+<p>This job can be scheduled on an interval or run ad-hoc as needed. It just depends on how much data your producers generate. If a table grows slowly and the typical query focusses on a small number of partitions, you can schedule more infrequent compactions (e.g. weekly). Otherwise, you may consider more frequent compactions such as hourly or daily compactions. You&rsquo;ll also likely need to restructure your physical storage structure if you&rsquo;re using Hive.</p>
+<p>The important thing is to ensure that the operation is atomic and isolated so that your customers don&rsquo;t see incomplete results. The repartition should either succeed and result in fewer files or fail. However, in neither case should customers see duplicated data or partial data.</p>
+<ul>
+<li>If the compaction is performed in-place, consider keeping a manifest of old files so we can record what should be deleted later. However, it&rsquo;s harder to guarantee atomicity when we try to change the files in place.</li>
+<li>Alternatively, we can add an additional subdirectory to our partition locations to separate uncompacted data with compacted data. This allows us to perform the compaction in a safe, atomic step. If the compaction succeeds, we update the partition path location. If it fails, we don&rsquo;t update the path and try again later.
+<ul>
+<li>However, if you go down this path, do note that Hive does not handle non-compliant partition paths very well. Any path that contains an infix or suffix that does not follow the key=value convention is not compliant with Hive partition paths. Consequently, Hive cannot autodiscover these paths using commands such as <code>MSCK REPAIR TABLE</code> [4].</li>
+<li>We can safely clean up the old, uncompacted data using a clean up job. Or we can use bucket lifecycle retention policies to clean up the data after X days.</li>
+</ul>
+</li>
+</ul>
+<h3 id="delta-lake-optimize">Delta Lake Optimize<a hidden class="anchor" aria-hidden="true" href="#delta-lake-optimize">#</a></h3>
+<p>If you&rsquo;re using a fancy open table format like Delta Lake, it supports compaction out of the box with the <code>OPTIMIZE</code> command [1]. This command automatically reduces the number of files by coalescing them to ~1GB files. This feature can save you the effort of having to author your own compaction job and scheduling it to run on a cadence. You can also easily configure the file sizes that are targetted by the command.</p>
+<p>By default, optimize works on all historical data. To save a bit of compute, you can configure it to compact incrementally on new data instead of wasting resources on older data which is likely already compacted.</p>
+<p>The benefits of this command compared to a custom solution is that it&rsquo;s atomic and less error prone. It can be annoying to track and troubleshoot compaction failures when you have many tables and even more partitions.</p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>The small files problem happens when you stream data into a data lake. To minimize latency for consumers and readers, we try to write data as frequently as possible. However, each file tends to be small and many files need to be opened by a processing engine to find the desired data.</p>
+<p>To avoid small files, we can increase the flush cadence as high as our customers are willing to tolerate. When that isn&rsquo;t enough, we should consider a custom compaction job (e.g. Spark) or use optimize command if we&rsquo;re using Delta Lake. Aim for files that are ~1GB after compaction.</p>
+<h2 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h2>
+<ul>
+<li>[1] <a href="https://delta.io/blog/2023-01-25-delta-lake-small-file-compaction-optimize/">https://delta.io/blog/2023-01-25-delta-lake-small-file-compaction-optimize/</a></li>
+<li>[2] <a href="https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.repartition.html">https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.repartition.html</a></li>
+<li>[3] <a href="https://docs.databricks.com/aws/en/optimizations/spark-ui-guide/slow-spark-stage-low-io#reading-a-lot-of-small-files">https://docs.databricks.com/aws/en/optimizations/spark-ui-guide/slow-spark-stage-low-io#reading-a-lot-of-small-files</a></li>
+<li>[4] <a href="https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-repair-table">https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-repair-table</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://example.org/tags/big-data/">Big Data</a></li>
+      <li><a href="https://example.org/tags/optimization/">Optimization</a></li>
+      <li><a href="https://example.org/tags/small-files-problem/">Small Files Problem</a></li>
+      <li><a href="https://example.org/tags/delta/">Delta</a></li>
+      <li><a href="https://example.org/tags/data-lake/">Data Lake</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://example.org/">Partition Skew</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>
