@@ -2,7 +2,7 @@
 title = 'Progressive Delivery using Argo Rollouts'
 summary = 'Gradually and safely update Kubernetes workloads using advanced deployment strategies'
 tags = ["progressive delivery", "kubernetes", "argo rollouts"]
-date = 2025-07-15
+date = 2025-07-27
 showToc = true
 draft = false
 +++
