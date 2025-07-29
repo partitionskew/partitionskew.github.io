@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Progressive Delivery using Argo Rollouts | Partition Skew</title>
+<meta name="keywords" content="progressive delivery, kubernetes, argo rollouts">
+<meta name="description" content="Gradually and safely update Kubernetes workloads using advanced deployment strategies">
+<meta name="author" content="">
+<link rel="canonical" href="https://example.org/posts/2025/07-jul/2025-07-27_progressive_delivery/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/2025/07-jul/2025-07-27_progressive_delivery/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Progressive Delivery using Argo Rollouts" />
+<meta property="og:description" content="Gradually and safely update Kubernetes workloads using advanced deployment strategies" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/2025/07-jul/2025-07-27_progressive_delivery/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-07-15T00:00:00+00:00" />
+<meta property="article:modified_time" content="2025-07-15T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Progressive Delivery using Argo Rollouts"/>
+<meta name="twitter:description" content="Gradually and safely update Kubernetes workloads using advanced deployment strategies"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Progressive Delivery using Argo Rollouts",
+      "item": "https://example.org/posts/2025/07-jul/2025-07-27_progressive_delivery/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Progressive Delivery using Argo Rollouts",
+  "name": "Progressive Delivery using Argo Rollouts",
+  "description": "Gradually and safely update Kubernetes workloads using advanced deployment strategies",
+  "keywords": [
+    "progressive delivery", "kubernetes", "argo rollouts"
+  ],
+  "articleBody": "Progressive Delivery Progressive delivery refers to the process of gradually releasing software updates. With Kubernetes (K8s), there’s limited options to upgrade Deployment workloads and the options are potentially disruptive.\nOut of the box, K8s Deployment workload offers 2 upgrade strategies [1]:\nRecreate: wait for all existing pods to stop and then deploy new pods RollingUpdate (default): gradually undeploy existing pods and deploy new pods at the same time until all existing pods are replaced The Recreate strategy causes downtime because new pods are not deployed until all existing pods are stopped. The RollingUpdate strategy avoids downtime by simultaneously provisioning new pods as it is shutting down existing ones. However, the workload doesn’t have many knobs and dials to control the rate at which pods are rolled. Finally, neither upgrade strategy gracefully handles rollbacks. To revert a bad deploy, you need to manually revert the manifests and trigger yet another upgrade. K8s will not automatically revert to the last good version.\nArgo Rollouts Argo Rollouts is a K8s controller that can be installed in a K8s cluster [2]. Once installed, it introduces several new custom resource definitions (CRD). Today, we’ll focus on the Rollouts resource.\nThe Rollouts resource is a new workload that behaves very similarly to a K8s Deployment [3]. As with a Deployment, a Rollout manages the lifecycle of ReplicaSets to faciliate upgrades and rollbacks. A Rollout will not automatically manage the replica sets of an existing Deployment unless you configure it to do so. This can be useful when you want to upgrade a specific Deployment to a Rollout.\nThe key difference is that a Rollout supports advanced deployment strategies. It also offers optional features such as integrating with metric providers (Prometheus, Datadog) or ingress controllers/service meshes (NGINX, Istio). Integrating with metric providers allows Argo Rollouts to query metrics to automate the progress or rollback of a progressive upgrade. Integrating with an ingress controller or service mesh allows Argo Rollouts to achieve fine-grained traffic shifting during a progressive upgrade. We’ll explore each of these features in follow-up posts.\nAdvanced Deployment Strategies Please note that a Rollout does not support Recreate or RollingUpdate upgrade strategies. Use a Deployment if you want prefer those strategies. Argo Rollouts is also not suitable for extended preview environments. If you want to deploy multiple versions for days or weeks, use another solution. Argo Rollouts is meant for upgrades that take minutes or hours.\nA Rollouts resource supports 2 upgrade strategies [4]:\nBlue-Green: new pods are deployment alongside existing pods; traffic will fully shift from the old pods to the new pods once the new pods are stable and then old pods will be shut down Canary: traffic is gradually shifted from old pods to new pods, in a controlled fashion, until all traffic is exclusively served from the new pods Blue-Green upgrades The Blue-Green strategy is a marked improvement compared to the Recreate strategy because it avoids application downtime. The existing pods are kept at the desired count and continue to serve traffic. All traffic will then be shifted to the new pods once the new pods are ready. However, this strategy is still disruptive because 100% of the traffic is either directed to the old pods or new pods. The blast radius is huge if there’s a business logic issue in the new version. Otherwise, if the new pods are unstable, Argo Rollouts will automatically revert to the last stable replica set.\nNext, let’s talk about the canary upgrade strategy.\nCanary upgrades The Canary strategy supports a multi-phase upgrade in which traffic is gradually shifted from the stable replica set to the canary replica set. The basic version of this strategy does not require an external traffic manager such as an Ingress controller or a service mesh. However, you lose the ability to configure percentage-based traffic shifting policies in the absence of a traffic manager.\nIn its basic form, the Rollouts controller is capable of shifting traffic at a coarse-grained interval using pod counts. For example, if the application has a desired pod count of 10, then 10% of traffic can be shifted at a time by provisioning one canary pod and deprovisioning one stable pod. If the app has deployed 100 pods, we can achieve up to 1% shifts of traffic at a time.\nUnlike a RollingUpdate, you can control the precise rate at which traffic is shifted over from the stable set to the canary set. Let’s examine how in the example in the next section.\nCanary rollout example Here’s an example of a Rollouts manifest that utilizes a canary upgrade strategy:\napiVersion: argoproj.io/v1alpha1 kind: Rollout metadata: name: my-app-rollout spec: replicas: 20 selector: matchLabels: app: my-app workloadRef: apiVersion: apps/v1 kind: Deployment name: my-app-deployment scaleDown: onsuccess progressDeadlineSeconds: 600 progressDeadlineAbort: false strategy: canary: stableService: my-app-stable-svc canaryService: my-app-canary-svc stableMetadata: labels: role: stable canaryMetadata: labels: role: canary scaleDownDelaySeconds: 60 steps: - setCanaryScale: matchTrafficWeight: true - pause: duration: 30s - setWeight: 1 - pause: {} - setWeight: 35 - pause: duration: 3m - setWeight: 65 - pause: duration: 3m Let’s break down what’s happening in this manifest. First, the top-level resource kind is Rollout. As a reminder, a Rollout can be used as a drop-in replacement for deployments. In the snippet below, we have an existing Deployment that we want to upgrade to a Rollout, so we can make use of the spec.workloadRef field to reference the Deployment’s pod template. The spec.workloadRef.scaleDown field allows us to specify whether to stop the Deployment pods once it’s been replaced by Rollout pods. Alternatively, we can eschew the spec.workloadRef and simply define the pod template directly using spec.template field. Do note this field is mutually exclusive with the spec.workloadRef field. Do not specify both!\nworkloadRef: apiVersion: apps/v1 kind: Deployment name: my-app-name-deployment scaleDown: onsuccess Next, we configure the spec.strategy field to use the canary upgrade strategy. Since we have not integrated a traffic manager, we’ll use k8s Service resources to shift traffic from the stable pods to the canary pods. This is done with the spec.strategy.canary.stableService and spec.strategy.canary.canaryService configs. The spec.strategy.canary.stableMetadata config is used to annotate and/or label the stable pods to help you identify it. However, spec.strategy.canary.canaryMetadata annotations/labels are ephemeral since canary pods only exist during an active upgrade.\nFinally, traffic will be shifted over using relative pod counts. Because we’ve set a desired pod count of 20, this means we can shift traffic in increments of 5% assuming an even distribution. If we want arbitrary percentages, we need to use an ingress controller or service mesh.\nstrategy: canary: stableService: my-app-name-stable-svc canaryService: my-app-name-canary-svc stableMetadata: labels: role: stable canaryMetadata: labels: role: canary Finally, the spec.strategy.steps field is where we define a canary upgrade strategy.\nsteps: - setCanaryScale: matchTrafficWeight: true - setWeight: 5 - pause: {} - setWeight: 35 - pause: duration: 3m - setWeight: 65 - pause: duration: 3m By default, the canary replica pod count is scaled to the amount of traffic that it handles (setCanaryScale.matchTrafficWeight: true). If 35% of traffic is shifted to the canary pods, then the canary pod count will be 35% of the desired count whereas the stable pods will be lowered to 65%. In this way, K8s distributes traffic to the stable and replica set based on the relative pod counts in each. This is what the matchTrafficWeight: true setting does.\nThe Rollout phases:\nFirst, 5% of traffic is shifted to the canary pods. Given our desired pod count of 20, this means there’ll be 19 stable pods and 1 canary pod The rollout pauses indefinitely to give the operator time to review metrics, logs, and alerts. If the operator is satisfied, they can promote the rollout to the next step. 35% of traffic is shifted to the canary. There’s now 13 stable pods and 7 canary pods. The rollout pauses for 3 minutes and then automatically proceeds to the next step 65% of traffic is now shifted to the canary Pause for 3 minutes Complete the rollout by shifting the remaining traffic to the canary replica set Wait spec.strategy.canary.scaleDownDelaySeconds before shutting down the stable pods Perform some clean-up such as removing the spec.strategy.canary.canaryMetadata annotations/labels and replacing them with the spec.strategy.canary.stableMetadata annotations/labels The Rollout is now complete and the canary replica set is marked as the latest stable replica set If you’re in doubt, start with the BlueGreen strategy. Then, try the canary strategy. Finally, explore fully automated upgrades using the Analysis CRD and tools like Kayenta.\nConclusion Kubernetes offers limited options to upgrade a Deployment. Recreate results in downtime and RollingUpdate offers limited ways to control progress/rate of the upgrades. Neither strategy gracefully handles rollbacks.\nArgo Rollouts is a controller that can be installed in a K8s cluster. It introduces the Rollouts workload resource which behaves similarly to a Deployment. It supports Blue-Green and Canary upgrade strategies. If the upgrade fails, Argo Rollouts will automatically rollback the deployment to the last stable replica set.\nIn a future article, we’ll discuss more Argo Rollout’s advanced features including fine-grained traffic shifting and metric analysis.\nReferences [1] https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy [2] https://argoproj.github.io/argo-rollouts/ [3] https://argoproj.github.io/argo-rollouts/features/specification/ [4] https://argoproj.github.io/argo-rollouts/concepts/#deployment-strategies ",
+  "wordCount" : "1499",
+  "inLanguage": "en",
+  "datePublished": "2025-07-15T00:00:00Z",
+  "dateModified": "2025-07-15T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/2025/07-jul/2025-07-27_progressive_delivery/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Partition Skew",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://example.org/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://example.org/tags/" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Progressive Delivery using Argo Rollouts
+    </h1>
+    <div class="post-meta"><span title='2025-07-15 00:00:00 +0000 UTC'>July 15, 2025</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#progressive-delivery" aria-label="Progressive Delivery">Progressive Delivery</a></li>
+                <li>
+                    <a href="#argo-rollouts" aria-label="Argo Rollouts">Argo Rollouts</a></li>
+                <li>
+                    <a href="#advanced-deployment-strategies" aria-label="Advanced Deployment Strategies">Advanced Deployment Strategies</a><ul>
+                        
+                <li>
+                    <a href="#blue-green-upgrades" aria-label="Blue-Green upgrades">Blue-Green upgrades</a></li>
+                <li>
+                    <a href="#canary-upgrades" aria-label="Canary upgrades">Canary upgrades</a></li></ul>
+                </li>
+                <li>
+                    <a href="#canary-rollout-example" aria-label="Canary rollout example">Canary rollout example</a></li>
+                <li>
+                    <a href="#conclusion" aria-label="Conclusion">Conclusion</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="progressive-delivery">Progressive Delivery<a hidden class="anchor" aria-hidden="true" href="#progressive-delivery">#</a></h2>
+<p>Progressive delivery refers to the process of gradually releasing software updates. With Kubernetes (K8s), there&rsquo;s limited options to upgrade <strong>Deployment</strong> workloads and the options are potentially disruptive.</p>
+<p>Out of the box, K8s <code>Deployment</code> workload offers 2 upgrade strategies [1]:</p>
+<ul>
+<li><strong>Recreate</strong>: wait for all existing pods to stop and then deploy new pods</li>
+<li><strong>RollingUpdate</strong> (default): gradually undeploy existing pods and deploy new pods at the same time until all existing pods are replaced</li>
+</ul>
+<p>The <code>Recreate</code> strategy causes downtime because new pods are not deployed until all existing pods are stopped. The <code>RollingUpdate</code> strategy avoids downtime by simultaneously provisioning new pods as it is shutting down existing ones. However, the workload doesn&rsquo;t have many knobs and dials to control the rate at which pods are rolled. Finally, neither upgrade strategy gracefully handles rollbacks. To revert a bad deploy, you need to manually revert the manifests and trigger yet another upgrade. K8s will not automatically revert to the last good version.</p>
+<h2 id="argo-rollouts">Argo Rollouts<a hidden class="anchor" aria-hidden="true" href="#argo-rollouts">#</a></h2>
+<p>Argo Rollouts is a K8s controller that can be installed in a K8s cluster [2]. Once installed, it introduces several new custom resource definitions (CRD). Today, we&rsquo;ll focus on the <strong>Rollouts</strong> resource.</p>
+<p>The Rollouts resource is a new workload that behaves very similarly to a K8s Deployment [3]. As with a Deployment, a Rollout manages the lifecycle of <strong>ReplicaSets</strong> to faciliate upgrades and rollbacks. A Rollout will not automatically manage the replica sets of an existing Deployment unless you configure it to do so. This can be useful when you want to upgrade a specific Deployment to a Rollout.</p>
+<p>The key difference is that a Rollout supports advanced deployment strategies. It also offers optional features such as integrating with metric providers (Prometheus, Datadog) or ingress controllers/service meshes (NGINX, Istio). Integrating with metric providers allows Argo Rollouts to query metrics to automate the progress or rollback of a progressive upgrade. Integrating with an ingress controller or service mesh allows Argo Rollouts to achieve fine-grained traffic shifting during a progressive upgrade. We&rsquo;ll explore each of these features in follow-up posts.</p>
+<h2 id="advanced-deployment-strategies">Advanced Deployment Strategies<a hidden class="anchor" aria-hidden="true" href="#advanced-deployment-strategies">#</a></h2>
+<p>Please note that a Rollout does not support Recreate or RollingUpdate upgrade strategies. Use a Deployment if you want prefer those strategies. Argo Rollouts is also not suitable for extended preview environments. If you want to deploy multiple versions for days or weeks, use another solution. Argo Rollouts is meant for upgrades that take minutes or hours.</p>
+<p>A Rollouts resource supports 2 upgrade strategies [4]:</p>
+<ul>
+<li><strong>Blue-Green</strong>: new pods are deployment alongside existing pods; traffic will fully shift from the old pods to the new pods once the new pods are stable and then old pods will be shut down</li>
+<li><strong>Canary</strong>: traffic is gradually shifted from old pods to new pods, in a controlled fashion, until all traffic is exclusively served from the new pods</li>
+</ul>
+<h3 id="blue-green-upgrades">Blue-Green upgrades<a hidden class="anchor" aria-hidden="true" href="#blue-green-upgrades">#</a></h3>
+<p>The <strong>Blue-Green</strong> strategy is a marked improvement compared to the Recreate strategy because it avoids application downtime. The existing pods are kept at the desired count and continue to serve traffic. All traffic will then be shifted to the new pods once the new pods are ready. However, this strategy is still disruptive because 100% of the traffic is either directed to the old pods or new pods. The blast radius is huge if there&rsquo;s a business logic issue in the new version. Otherwise, if the new pods are unstable, Argo Rollouts will automatically revert to the last stable replica set.</p>
+<p>Next, let&rsquo;s talk about the canary upgrade strategy.</p>
+<h3 id="canary-upgrades">Canary upgrades<a hidden class="anchor" aria-hidden="true" href="#canary-upgrades">#</a></h3>
+<p>The <strong>Canary</strong> strategy supports a multi-phase upgrade in which traffic is gradually shifted from the <code>stable</code> replica set to the <code>canary</code> replica set. The basic version of this strategy does not require an external traffic manager such as an Ingress controller or a service mesh. However, you lose the ability to configure percentage-based traffic shifting policies in the absence of a traffic manager.</p>
+<p>In its basic form, the Rollouts controller is capable of shifting traffic at a coarse-grained interval using pod counts. For example, if the application has a desired pod count of 10, then 10% of traffic can be shifted at a time by provisioning one canary pod and deprovisioning one stable pod. If the app has deployed 100 pods, we can achieve up to 1% shifts of traffic at a time.</p>
+<p>Unlike a RollingUpdate, you can control the precise rate at which traffic is shifted over from the stable set to the canary set. Let&rsquo;s examine how in the example in the next section.</p>
+<h2 id="canary-rollout-example">Canary rollout example<a hidden class="anchor" aria-hidden="true" href="#canary-rollout-example">#</a></h2>
+<p>Here&rsquo;s an example of a Rollouts manifest that utilizes a canary upgrade strategy:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">argoproj.io/v1alpha1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rollout</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">my-app-rollout</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">app</span>: <span style="color:#ae81ff">my-app</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">workloadRef</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">my-app-deployment</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">scaleDown</span>: <span style="color:#ae81ff">onsuccess</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">progressDeadlineSeconds</span>: <span style="color:#ae81ff">600</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">progressDeadlineAbort</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">strategy</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">canary</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">stableService</span>: <span style="color:#ae81ff">my-app-stable-svc</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">canaryService</span>: <span style="color:#ae81ff">my-app-canary-svc</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">stableMetadata</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">role</span>: <span style="color:#ae81ff">stable</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">canaryMetadata</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">role</span>: <span style="color:#ae81ff">canary</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">scaleDownDelaySeconds</span>: <span style="color:#ae81ff">60</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">steps</span>:
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">setCanaryScale</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">matchTrafficWeight</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">pause</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">duration</span>: <span style="color:#ae81ff">30s</span>
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">setWeight</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">pause</span>: {}
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">setWeight</span>: <span style="color:#ae81ff">35</span>
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">pause</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">duration</span>: <span style="color:#ae81ff">3m</span>
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">setWeight</span>: <span style="color:#ae81ff">65</span>
+</span></span><span style="display:flex;"><span>                - <span style="color:#f92672">pause</span>:
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">duration</span>: <span style="color:#ae81ff">3m</span>
+</span></span></code></pre></div><p>Let&rsquo;s break down what&rsquo;s happening in this manifest. First, the top-level resource kind is <code>Rollout</code>. As a reminder, a Rollout can be used as a drop-in replacement for deployments. In the snippet below, we have an existing Deployment that we want to upgrade to a Rollout, so we can make use of the <code>spec.workloadRef</code> field to reference the Deployment&rsquo;s pod template. The <code>spec.workloadRef.scaleDown</code> field allows us to specify whether to stop the Deployment pods once it&rsquo;s been replaced by Rollout pods. Alternatively, we can eschew the <code>spec.workloadRef</code> and simply define the pod template directly using <code>spec.template</code> field. Do note this field is mutually exclusive with the <code>spec.workloadRef</code> field. <strong>Do not specify both!</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">workloadRef</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">my-app-name-deployment</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">scaleDown</span>: <span style="color:#ae81ff">onsuccess</span>
+</span></span></code></pre></div><p>Next, we configure the <code>spec.strategy</code> field to use the canary upgrade strategy. Since we have not integrated a traffic manager, we&rsquo;ll use k8s Service resources to shift traffic from the stable pods to the canary pods. This is done with the <code>spec.strategy.canary.stableService</code> and <code>spec.strategy.canary.canaryService</code> configs. The <code>spec.strategy.canary.stableMetadata</code> config is used to annotate and/or label the stable pods to help you identify it. However, <code>spec.strategy.canary.canaryMetadata</code> annotations/labels are ephemeral since canary pods only exist during an active upgrade.</p>
+<p>Finally, traffic will be shifted over using relative pod counts. Because we&rsquo;ve set a desired pod count of 20, this means we can shift traffic in increments of 5% assuming an even distribution. If we want arbitrary percentages, we need to use an ingress controller or service mesh.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">strategy</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">canary</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">stableService</span>: <span style="color:#ae81ff">my-app-name-stable-svc</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">canaryService</span>: <span style="color:#ae81ff">my-app-name-canary-svc</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">stableMetadata</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">role</span>: <span style="color:#ae81ff">stable</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">canaryMetadata</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">role</span>: <span style="color:#ae81ff">canary</span>
+</span></span></code></pre></div><p>Finally, the <code>spec.strategy.steps</code> field is where we define a canary upgrade strategy.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">steps</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">setCanaryScale</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">matchTrafficWeight</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">setWeight</span>: <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">pause</span>: {}
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">setWeight</span>: <span style="color:#ae81ff">35</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">pause</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">duration</span>: <span style="color:#ae81ff">3m</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">setWeight</span>: <span style="color:#ae81ff">65</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">pause</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">duration</span>: <span style="color:#ae81ff">3m</span>
+</span></span></code></pre></div><p>By default, the canary replica pod count is scaled to the amount of traffic that it handles (<code>setCanaryScale.matchTrafficWeight: true</code>). If 35% of traffic is shifted to the canary pods, then the canary pod count will be 35% of the desired count whereas the stable pods will be lowered to 65%. In this way, K8s distributes traffic to the stable and replica set based on the relative pod counts in each. This is what the <code>matchTrafficWeight: true</code> setting does.</p>
+<p>The Rollout phases:</p>
+<ol>
+<li>First, 5% of traffic is shifted to the canary pods. Given our desired pod count of 20, this means there&rsquo;ll be 19 stable pods and 1 canary pod</li>
+<li>The rollout pauses indefinitely to give the operator time to review metrics, logs, and alerts. If the operator is satisfied, they can promote the rollout to the next step.</li>
+<li>35% of traffic is shifted to the canary. There&rsquo;s now 13 stable pods and 7 canary pods.</li>
+<li>The rollout pauses for 3 minutes and then automatically proceeds to the next step</li>
+<li>65% of traffic is now shifted to the canary</li>
+<li>Pause for 3 minutes</li>
+<li>Complete the rollout by shifting the remaining traffic to the canary replica set</li>
+<li>Wait <code>spec.strategy.canary.scaleDownDelaySeconds</code> before shutting down the stable pods</li>
+<li>Perform some clean-up such as removing the <code>spec.strategy.canary.canaryMetadata</code> annotations/labels and replacing them with the <code>spec.strategy.canary.stableMetadata</code> annotations/labels</li>
+<li>The Rollout is now complete and the canary replica set is marked as the latest stable replica set</li>
+</ol>
+<p>If you&rsquo;re in doubt, start with the BlueGreen strategy. Then, try the canary strategy. Finally, explore fully automated upgrades using the <code>Analysis</code> CRD and tools like Kayenta.</p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>Kubernetes offers limited options to upgrade a Deployment. <code>Recreate</code> results in downtime and <code>RollingUpdate</code> offers limited ways to control progress/rate of the upgrades. Neither strategy gracefully handles rollbacks.</p>
+<p>Argo Rollouts is a controller that can be installed in a K8s cluster. It introduces the <code>Rollouts</code> workload resource which behaves similarly to a <code>Deployment</code>. It supports <code>Blue-Green</code> and <code>Canary</code> upgrade strategies. If the upgrade fails, Argo Rollouts will automatically rollback the deployment to the last stable replica set.</p>
+<p>In a future article, we&rsquo;ll discuss more Argo Rollout&rsquo;s advanced features including fine-grained traffic shifting and metric analysis.</p>
+<h2 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h2>
+<ul>
+<li>[1] <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy">https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy</a></li>
+<li>[2] <a href="https://argoproj.github.io/argo-rollouts/">https://argoproj.github.io/argo-rollouts/</a></li>
+<li>[3] <a href="https://argoproj.github.io/argo-rollouts/features/specification/">https://argoproj.github.io/argo-rollouts/features/specification/</a></li>
+<li>[4] <a href="https://argoproj.github.io/argo-rollouts/concepts/#deployment-strategies">https://argoproj.github.io/argo-rollouts/concepts/#deployment-strategies</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://example.org/tags/progressive-delivery/">Progressive Delivery</a></li>
+      <li><a href="https://example.org/tags/kubernetes/">Kubernetes</a></li>
+      <li><a href="https://example.org/tags/argo-rollouts/">Argo Rollouts</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://example.org/">Partition Skew</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>
