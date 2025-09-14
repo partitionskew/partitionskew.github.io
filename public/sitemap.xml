@@ -5,7 +5,28 @@
     <loc>https://example.org/tags/argo-rollouts/</loc>
     <lastmod>2025-07-27T00:00:00+00:00</lastmod>
   </url><url>
+    <loc>https://example.org/tags/azure/</loc>
+    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/</loc>
+    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/ingress/</loc>
+    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://example.org/tags/kubernetes/</loc>
+    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/layer-4/</loc>
+    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/layer-7/</loc>
+    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/load-balancing/</loc>
+    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/networking/</loc>
     <lastmod>2025-07-27T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/</loc>
@@ -86,9 +107,6 @@
     <loc>https://example.org/posts/2025/03-mar/2025-03-16_istio_localiby_lb/</loc>
     <lastmod>2025-03-16T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://example.org/tags/load-balancing/</loc>
-    <lastmod>2025-03-16T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://example.org/tags/service-mesh/</loc>
     <lastmod>2025-03-16T00:00:00+00:00</lastmod>
   </url><url>
@@ -114,9 +132,6 @@
     <lastmod>2024-09-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/tags/layered-architecture/</loc>
-    <lastmod>2024-09-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/networking/</loc>
     <lastmod>2024-09-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/tags/osi-model/</loc>

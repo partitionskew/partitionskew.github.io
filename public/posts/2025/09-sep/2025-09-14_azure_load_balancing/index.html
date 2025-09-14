@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Azure - Load Balancing | Partition Skew</title>
+<meta name="keywords" content="load balancing, layer 4, layer 7, networking, azure, ingress">
+<meta name="description" content="A brief survey of the layer 4 and layer 7 load balancers in Azure">
+<meta name="author" content="">
+<link rel="canonical" href="https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Azure - Load Balancing" />
+<meta property="og:description" content="A brief survey of the layer 4 and layer 7 load balancers in Azure" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-07-27T00:00:00+00:00" />
+<meta property="article:modified_time" content="2025-07-27T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Azure - Load Balancing"/>
+<meta name="twitter:description" content="A brief survey of the layer 4 and layer 7 load balancers in Azure"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Azure - Load Balancing",
+      "item": "https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Azure - Load Balancing",
+  "name": "Azure - Load Balancing",
+  "description": "A brief survey of the layer 4 and layer 7 load balancers in Azure",
+  "keywords": [
+    "load balancing", "layer 4", "layer 7", "networking", "azure", "ingress"
+  ],
+  "articleBody": "Azure Load Balancing Azure provides a plethora of load balancing (LB) options [1]. Some operate at the network layer (L4); others at the application layer (L7). Some load balancers are regional whereas others are global.\nThis article surveys the core LB offerings with a particular focus on the L4 Load Balancer and the L7 Application Gateways. We’ll see that each solution has some trade-offs worth considering.\nAzure Load Balancer (L4) This product is the standard network load balancer that routes traffic to a set of virtual machines (VMs) or a virtual machine scale set (VMSS).\nFYI: VMSS is an Azure construct that enables you to group VMs together for easier management such as applying auto-scaling policies [2].\nThe Azure LB resides in your virtual network and can handle both inbound and outbound traffic. Moreover, the Azure LB supports public IP addresses, private IP addresses, or both. This enables you to configure a public or private LB.\nThe LB passes through network traffic which leads to low latency and high throughput. It’s important to note that the client establishes a direct connection to the backend server. Depending on your organization’s security policy, this can be a dealbreaker [3].\nConversely, it cannot terminate TLS connections since that’s a Layer 7 concern. You’ll need to combine the network load balancer with another solution, such as a service mesh, in order to terminate TLS and perform advanced traffic management.\nSecurity is enforced with network security groups (NSG). By default, traffic is blocked unless permitted by a NSG on a subnet or network interface card (NIC).\nFinally, the public load balancer supports DDOS protection. Refer to the documentation for more info: https://learn.microsoft.com/en-us/azure/load-balancer/tutorial-protect-load-balancer-ddos\nApplication Gateways (L7) If you require more advanced traffic routing capabilities, you’ll need to upgrade to a layer 7 load balancer. Azure doesn’t provide a standard application load balancer (ALB) like Amazon or Google, but it does provide 2 gateway products that function similarly.\nApplication Gateway V2 This product is available in most regions and offers many of the features that you expect from an ALB:\nauto-scaling can proxy layer 4 traffic (e.g. non-HTTP clients) regional with deployments spanning multiple zones for redundancy and high availability add, remove, or modify HTTP headers in the request/response supports URL rewrites integrates with Azure Kubernetes Service (AKS) through Application Gateway Ingress Controller [4] public and/or private frontend IP addresses Unlike network load balancers, the Application Gateway V2 supports TLS termination and WAF security policies. It also supports DDOS protection for L3/L4 traffic.\nThe trade-off with the Application Gateway is that it does not support container-native load balancing. Unlike the Application Gateway for Containers, which we’ll talk about next, traffic is forwarded to a VM and then Kubernetes routes the request to the backend pod which may or may not be on the same node. If the backend pod is not on the same host, then this results in a second hop and additional latency.\nApplication Gateway for Containers Application Gateway for Containers is also a layer 7 load balancer but view it as an evolution of Application Gateway V2 that better integrates with Kubernetes. Specifically, traffic is routed directly to the backend pods which reduces unnecessary hops and decreases latency [5]. This is known as container-native load balancing, a feature that is provided by Google ALBs as well [6].\nThis product also supports the K8s Gateway API, which enables more powerful traffic management rules to be expressed through Kubernetes resources compared to the Ingress API [7].\nThe trade-off with this product is that it’s still relatively new and is not available in all regions. It also does not support private frontends.\nNevertheless, it’d be my first choice for managing external traffic flow into a Kubernetes cluster.\nAzure Front Door (AFD) Azure Front Door is a content delivery network (CDN) solution that is globally distributed. It minimizes client latency by connecting clients to the closest point of presence (PoP) which is deployed in key, strategic areas around the world [8].\nAFD supports many of the same features as the Application Gateways including TLS termination, WAF security policies, and DDOS protection.\nAFD is particularly effective if your app benefits from caching content. However, AFD is not mutually exclusive with Application Gateways. You can combine AFD with Application Gateway or Azure LB. One reason is to minimize client latency by taking advantage of the global distribution of AFD PoPs. The PoPs routes traffic across Azure’s network backbone to the second layer. The second layer of load balancers then handles traffic routing/management.\nConclusion Azure offers a plethora of load balancing options. For basic, non-HTTPS traffic, an Azure Load Balancer suffices. For primarily internet-facing, HTTPS traffic, consider using one of the two Application Gateways. If the backend is deployed in Azure Kubernetes Service (AKS), prioritize Application Gateway for Containers over Application Gateway V2. Finally, if you need global deployments and/or caching, use or combine Azure Front Door with the other load balancing products.\nReferences [1] https://learn.microsoft.com/en-us/azure/architecture/guide/technology-choices/load-balancing-overview [2] https://learn.microsoft.com/en-us/azure/load-balancer/load-balancer-overview [3] https://learn.microsoft.com/en-us/azure/application-gateway/tcp-tls-proxy-overview#comparing-azure-load-balancer-with-azure-application-gateway [4] https://learn.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview [5] https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/container-networking#cni-overlay-and-application-gateway-for-containers [6] https://cloud.google.com/kubernetes-engine/docs/concepts/container-native-load-balancing#architecture [7] https://gateway-api.sigs.k8s.io/ [8] https://learn.microsoft.com/en-us/azure/frontdoor/edge-locations-by-region ",
+  "wordCount" : "839",
+  "inLanguage": "en",
+  "datePublished": "2025-07-27T00:00:00Z",
+  "dateModified": "2025-07-27T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Partition Skew",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://example.org/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://example.org/tags/" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Azure - Load Balancing
+    </h1>
+    <div class="post-meta"><span title='2025-07-27 00:00:00 +0000 UTC'>July 27, 2025</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#azure-load-balancing" aria-label="Azure Load Balancing">Azure Load Balancing</a></li>
+                <li>
+                    <a href="#azure-load-balancer-l4" aria-label="Azure Load Balancer (L4)">Azure Load Balancer (L4)</a></li>
+                <li>
+                    <a href="#application-gateways-l7" aria-label="Application Gateways (L7)">Application Gateways (L7)</a><ul>
+                        
+                <li>
+                    <a href="#application-gateway-v2" aria-label="Application Gateway V2">Application Gateway V2</a></li>
+                <li>
+                    <a href="#application-gateway-for-containers" aria-label="Application Gateway for Containers">Application Gateway for Containers</a></li></ul>
+                </li>
+                <li>
+                    <a href="#azure-front-door-afd" aria-label="Azure Front Door (AFD)">Azure Front Door (AFD)</a></li>
+                <li>
+                    <a href="#conclusion" aria-label="Conclusion">Conclusion</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="azure-load-balancing">Azure Load Balancing<a hidden class="anchor" aria-hidden="true" href="#azure-load-balancing">#</a></h2>
+<p>Azure provides a plethora of load balancing (LB) options [1]. Some operate at the network layer (L4); others at the application layer (L7). Some load balancers are regional whereas others are global.</p>
+<p>This article surveys the core LB offerings with a particular focus on the L4 Load Balancer and the L7 Application Gateways. We&rsquo;ll see that each solution has some trade-offs worth considering.</p>
+<h2 id="azure-load-balancer-l4">Azure Load Balancer (L4)<a hidden class="anchor" aria-hidden="true" href="#azure-load-balancer-l4">#</a></h2>
+<p>This product is the standard network load balancer that routes traffic to a set of virtual machines (VMs) or a <strong>virtual machine scale set</strong> (VMSS).</p>
+<blockquote>
+<p>FYI: VMSS is an Azure construct that enables you to group VMs together for easier management such as applying auto-scaling policies [2].</p>
+</blockquote>
+<p>The Azure LB resides in your virtual network and can handle both inbound and outbound traffic. Moreover, the Azure LB supports public IP addresses, private IP addresses, or both. This enables you to configure a public or private LB.</p>
+<p>The LB passes through network traffic which leads to low latency and high throughput. It&rsquo;s important to note that the client establishes a direct connection to the backend server. Depending on your organization&rsquo;s security policy, this can be a dealbreaker [3].</p>
+<p>Conversely, it cannot terminate TLS connections since that&rsquo;s a Layer 7 concern. You&rsquo;ll need to combine the network load balancer with another solution, such as a service mesh, in order to terminate TLS and perform advanced traffic management.</p>
+<p>Security is enforced with network security groups (NSG). By default, traffic is blocked unless permitted by a NSG on a subnet or network interface card (NIC).</p>
+<p>Finally, the public load balancer supports DDOS protection. Refer to the documentation for more info: <a href="https://learn.microsoft.com/en-us/azure/load-balancer/tutorial-protect-load-balancer-ddos">https://learn.microsoft.com/en-us/azure/load-balancer/tutorial-protect-load-balancer-ddos</a></p>
+<h2 id="application-gateways-l7">Application Gateways (L7)<a hidden class="anchor" aria-hidden="true" href="#application-gateways-l7">#</a></h2>
+<p>If you require more advanced traffic routing capabilities, you&rsquo;ll need to upgrade to a layer 7 load balancer. Azure doesn&rsquo;t provide a standard application load balancer (ALB) like Amazon or Google, but it does provide 2 gateway products that function similarly.</p>
+<h3 id="application-gateway-v2">Application Gateway V2<a hidden class="anchor" aria-hidden="true" href="#application-gateway-v2">#</a></h3>
+<p>This product is available in most regions and offers many of the features that you expect from an ALB:</p>
+<ul>
+<li>auto-scaling</li>
+<li>can proxy layer 4 traffic (e.g. non-HTTP clients)</li>
+<li>regional with deployments spanning multiple zones for redundancy and high availability</li>
+<li>add, remove, or modify HTTP headers in the request/response</li>
+<li>supports URL rewrites</li>
+<li>integrates with Azure Kubernetes Service (AKS) through Application Gateway Ingress Controller [4]</li>
+<li>public and/or private frontend IP addresses</li>
+</ul>
+<p>Unlike network load balancers, the Application Gateway V2 supports TLS termination and WAF security policies. It also supports DDOS protection for L3/L4 traffic.</p>
+<p>The trade-off with the Application Gateway is that it does not support container-native load balancing. Unlike the Application Gateway for Containers, which we&rsquo;ll talk about next, traffic is forwarded to a VM and then Kubernetes routes the request to the backend pod which may or may not be on the same node. If the backend pod is not on the same host, then this results in a second hop and additional latency.</p>
+<h3 id="application-gateway-for-containers">Application Gateway for Containers<a hidden class="anchor" aria-hidden="true" href="#application-gateway-for-containers">#</a></h3>
+<p>Application Gateway for Containers is also a layer 7 load balancer but view it as an evolution of Application Gateway V2 that better integrates with Kubernetes. Specifically, traffic is routed directly to the backend pods which reduces unnecessary hops and decreases latency [5]. This is known as container-native load balancing, a feature that is provided by Google ALBs as well [6].</p>
+<p>This product also supports the K8s Gateway API, which enables more powerful traffic management rules to be expressed through Kubernetes resources compared to the Ingress API [7].</p>
+<p>The trade-off with this product is that it&rsquo;s still relatively new and is not available in all regions. It also does not support private frontends.</p>
+<p>Nevertheless, it&rsquo;d be my first choice for managing external traffic flow into a Kubernetes cluster.</p>
+<h2 id="azure-front-door-afd">Azure Front Door (AFD)<a hidden class="anchor" aria-hidden="true" href="#azure-front-door-afd">#</a></h2>
+<p>Azure Front Door is a content delivery network (CDN) solution that is globally distributed. It minimizes client latency by connecting clients to the closest point of presence (PoP) which is deployed in key, strategic areas around the world [8].</p>
+<p>AFD supports many of the same features as the Application Gateways including TLS termination, WAF security policies, and DDOS protection.</p>
+<p>AFD is particularly effective if your app benefits from caching content. However, AFD is not mutually exclusive with Application Gateways. You can combine AFD with Application Gateway or Azure LB. One reason is to minimize client latency by taking advantage of the global distribution of AFD PoPs. The PoPs routes traffic across Azure&rsquo;s network backbone to the second layer. The second layer of load balancers then handles traffic routing/management.</p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>Azure offers a plethora of load balancing options. For basic, non-HTTPS traffic, an Azure Load Balancer suffices. For primarily internet-facing, HTTPS traffic, consider using one of the two Application Gateways. If the backend is deployed in Azure Kubernetes Service (AKS), prioritize Application Gateway for Containers over Application Gateway V2. Finally, if you need global deployments and/or caching, use or combine Azure Front Door with the other load balancing products.</p>
+<h2 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h2>
+<ul>
+<li>[1] <a href="https://learn.microsoft.com/en-us/azure/architecture/guide/technology-choices/load-balancing-overview">https://learn.microsoft.com/en-us/azure/architecture/guide/technology-choices/load-balancing-overview</a></li>
+<li>[2] <a href="https://learn.microsoft.com/en-us/azure/load-balancer/load-balancer-overview">https://learn.microsoft.com/en-us/azure/load-balancer/load-balancer-overview</a></li>
+<li>[3] <a href="https://learn.microsoft.com/en-us/azure/application-gateway/tcp-tls-proxy-overview#comparing-azure-load-balancer-with-azure-application-gateway">https://learn.microsoft.com/en-us/azure/application-gateway/tcp-tls-proxy-overview#comparing-azure-load-balancer-with-azure-application-gateway</a></li>
+<li>[4] <a href="https://learn.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview">https://learn.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview</a></li>
+<li>[5] <a href="https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/container-networking#cni-overlay-and-application-gateway-for-containers">https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/container-networking#cni-overlay-and-application-gateway-for-containers</a></li>
+<li>[6] <a href="https://cloud.google.com/kubernetes-engine/docs/concepts/container-native-load-balancing#architecture">https://cloud.google.com/kubernetes-engine/docs/concepts/container-native-load-balancing#architecture</a></li>
+<li>[7] <a href="https://gateway-api.sigs.k8s.io/">https://gateway-api.sigs.k8s.io/</a></li>
+<li>[8] <a href="https://learn.microsoft.com/en-us/azure/frontdoor/edge-locations-by-region">https://learn.microsoft.com/en-us/azure/frontdoor/edge-locations-by-region</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://example.org/tags/load-balancing/">Load Balancing</a></li>
+      <li><a href="https://example.org/tags/layer-4/">Layer 4</a></li>
+      <li><a href="https://example.org/tags/layer-7/">Layer 7</a></li>
+      <li><a href="https://example.org/tags/networking/">Networking</a></li>
+      <li><a href="https://example.org/tags/azure/">Azure</a></li>
+      <li><a href="https://example.org/tags/ingress/">Ingress</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://example.org/">Partition Skew</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

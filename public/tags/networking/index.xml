@@ -6,8 +6,15 @@
     <description>Recent content in Networking on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 28 Sep 2024 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 27 Jul 2025 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://example.org/tags/networking/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Azure - Load Balancing</title>
+      <link>https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/</link>
+      <pubDate>Sun, 27 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/</guid>
+      <description>A brief survey of the layer 4 and layer 7 load balancers in Azure</description>
+    </item>
     <item>
       <title>Computer Networking - Part 3: OSI model</title>
       <link>https://example.org/posts/2024/09-sep/2024-09-28_osi_model/</link>

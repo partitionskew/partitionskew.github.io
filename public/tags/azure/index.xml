@@ -1,26 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Load Balancing on Partition Skew</title>
-    <link>https://example.org/tags/load-balancing/</link>
-    <description>Recent content in Load Balancing on Partition Skew</description>
+    <title>Azure on Partition Skew</title>
+    <link>https://example.org/tags/azure/</link>
+    <description>Recent content in Azure on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 27 Jul 2025 00:00:00 +0000</lastBuildDate>
-    <atom:link href="https://example.org/tags/load-balancing/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://example.org/tags/azure/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Azure - Load Balancing</title>
       <link>https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/</link>
       <pubDate>Sun, 27 Jul 2025 00:00:00 +0000</pubDate>
       <guid>https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/</guid>
       <description>A brief survey of the layer 4 and layer 7 load balancers in Azure</description>
-    </item>
-    <item>
-      <title>Istio - Locality-based Load Balancing</title>
-      <link>https://example.org/posts/2025/03-mar/2025-03-16_istio_localiby_lb/</link>
-      <pubDate>Sun, 16 Mar 2025 00:00:00 +0000</pubDate>
-      <guid>https://example.org/posts/2025/03-mar/2025-03-16_istio_localiby_lb/</guid>
-      <description>What is locality based load balancing? When should it be enabled or disabled?</description>
     </item>
   </channel>
 </rss>
