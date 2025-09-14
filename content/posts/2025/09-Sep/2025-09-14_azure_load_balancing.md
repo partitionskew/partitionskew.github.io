@@ -2,7 +2,7 @@
 title = 'Azure - Load Balancing'
 summary = 'A brief survey of the layer 4 and layer 7 load balancers in Azure'
 tags = ["load balancing", "layer 4", "layer 7", "networking", "azure", "ingress"]
-date = 2025-07-27
+date = 2025-09-14
 showToc = true
 draft = false
 +++

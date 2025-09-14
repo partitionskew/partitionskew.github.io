@@ -2,46 +2,46 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://example.org/tags/azure/</loc>
+    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/</loc>
+    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/ingress/</loc>
+    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/layer-4/</loc>
+    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/layer-7/</loc>
+    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/load-balancing/</loc>
+    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/networking/</loc>
+    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/</loc>
+    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/posts/</loc>
+    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/</loc>
+    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://example.org/tags/argo-rollouts/</loc>
     <lastmod>2025-07-27T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://example.org/tags/azure/</loc>
-    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/posts/2025/09-sep/2025-09-14_azure_load_balancing/</loc>
-    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/ingress/</loc>
-    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://example.org/tags/kubernetes/</loc>
-    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/layer-4/</loc>
-    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/layer-7/</loc>
-    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/load-balancing/</loc>
-    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/networking/</loc>
-    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/</loc>
-    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/posts/</loc>
     <lastmod>2025-07-27T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/tags/progressive-delivery/</loc>
     <lastmod>2025-07-27T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/posts/2025/07-jul/2025-07-27_progressive_delivery/</loc>
-    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/</loc>
     <lastmod>2025-07-27T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/tags/big-data/</loc>
