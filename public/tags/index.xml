@@ -6,8 +6,36 @@
     <description>Recent content in Tags on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 14 Sep 2025 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 05 Oct 2025 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://example.org/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Cilium</title>
+      <link>https://example.org/tags/cilium/</link>
+      <pubDate>Sun, 05 Oct 2025 00:00:00 +0000</pubDate>
+      <guid>https://example.org/tags/cilium/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Kubernetes</title>
+      <link>https://example.org/tags/kubernetes/</link>
+      <pubDate>Sun, 05 Oct 2025 00:00:00 +0000</pubDate>
+      <guid>https://example.org/tags/kubernetes/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Network Policy</title>
+      <link>https://example.org/tags/network-policy/</link>
+      <pubDate>Sun, 05 Oct 2025 00:00:00 +0000</pubDate>
+      <guid>https://example.org/tags/network-policy/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Security</title>
+      <link>https://example.org/tags/security/</link>
+      <pubDate>Sun, 05 Oct 2025 00:00:00 +0000</pubDate>
+      <guid>https://example.org/tags/security/</guid>
+      <description></description>
+    </item>
     <item>
       <title>Azure</title>
       <link>https://example.org/tags/azure/</link>
@@ -55,13 +83,6 @@
       <link>https://example.org/tags/argo-rollouts/</link>
       <pubDate>Sun, 27 Jul 2025 00:00:00 +0000</pubDate>
       <guid>https://example.org/tags/argo-rollouts/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Kubernetes</title>
-      <link>https://example.org/tags/kubernetes/</link>
-      <pubDate>Sun, 27 Jul 2025 00:00:00 +0000</pubDate>
-      <guid>https://example.org/tags/kubernetes/</guid>
       <description></description>
     </item>
     <item>

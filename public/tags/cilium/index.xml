@@ -1,26 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Kubernetes on Partition Skew</title>
-    <link>https://example.org/tags/kubernetes/</link>
-    <description>Recent content in Kubernetes on Partition Skew</description>
+    <title>Cilium on Partition Skew</title>
+    <link>https://example.org/tags/cilium/</link>
+    <description>Recent content in Cilium on Partition Skew</description>
     <generator>Hugo -- 0.134.0</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 05 Oct 2025 00:00:00 +0000</lastBuildDate>
-    <atom:link href="https://example.org/tags/kubernetes/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://example.org/tags/cilium/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Kubernetes - Network Policies</title>
       <link>https://example.org/posts/2025/10-oct/2025-10-05_k8s_net-pols/</link>
       <pubDate>Sun, 05 Oct 2025 00:00:00 +0000</pubDate>
       <guid>https://example.org/posts/2025/10-oct/2025-10-05_k8s_net-pols/</guid>
       <description>Securing traffic between pods within the cluster and into/out of the cluster using network policies</description>
-    </item>
-    <item>
-      <title>Progressive Delivery using Argo Rollouts</title>
-      <link>https://example.org/posts/2025/07-jul/2025-07-27_progressive_delivery/</link>
-      <pubDate>Sun, 27 Jul 2025 00:00:00 +0000</pubDate>
-      <guid>https://example.org/posts/2025/07-jul/2025-07-27_progressive_delivery/</guid>
-      <description>Gradually and safely update Kubernetes workloads using advanced deployment strategies</description>
     </item>
   </channel>
 </rss>

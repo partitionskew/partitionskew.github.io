@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Kubernetes - Network Policies | Partition Skew</title>
+<meta name="keywords" content="kubernetes, network policy, cilium, security">
+<meta name="description" content="Securing traffic between pods within the cluster and into/out of the cluster using network policies">
+<meta name="author" content="">
+<link rel="canonical" href="https://example.org/posts/2025/10-oct/2025-10-05_k8s_net-pols/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/2025/10-oct/2025-10-05_k8s_net-pols/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Kubernetes - Network Policies" />
+<meta property="og:description" content="Securing traffic between pods within the cluster and into/out of the cluster using network policies" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/2025/10-oct/2025-10-05_k8s_net-pols/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-10-05T00:00:00+00:00" />
+<meta property="article:modified_time" content="2025-10-05T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Kubernetes - Network Policies"/>
+<meta name="twitter:description" content="Securing traffic between pods within the cluster and into/out of the cluster using network policies"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Kubernetes - Network Policies",
+      "item": "https://example.org/posts/2025/10-oct/2025-10-05_k8s_net-pols/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Kubernetes - Network Policies",
+  "name": "Kubernetes - Network Policies",
+  "description": "Securing traffic between pods within the cluster and into/out of the cluster using network policies",
+  "keywords": [
+    "kubernetes", "network policy", "cilium", "security"
+  ],
+  "articleBody": "Introduction By default, traffic between pods in a k8s cluster is non-isolated [1]. This means all incoming and outgoing connections are allowed, including those originating outside of the cluster. With the appropriate container networking plugins installed, Network Policies can secure both ingress and egress traffic.\nIn this brief article, we describe what network policies are and give a couple simple examples of how to use them.\nKubernetes Network Policies Network policies only take effect if the appropriate network plugin is installed. Check the documentation for a list of supported plugins [2]. Common choices include Calico and Cilium. Note that features and behaviour are not equivalent across network plugins.\nNetwork policies control UDP/TCP traffic at the L3/L4 layer (IP addresses \u0026 ports). The network policy selects a set of pods via the podSelector [3]. For matching pods, the policy permits ingress and/or egress traffic from/to:\npods namespaces IP blocks For example, a network policy permits pod A in namespace foo to make an outgoing connection to pod B in namespace bar. A separate network policy must permit pod B to accept traffic from pod A in namespace foo otherwise the connection will not be allowed.\nOf course, it is possible pod A doesn’t have a network policy which means it can make any outgoing connection. Likewise, pod B may not have a network policy in which case it accepts all incoming connections.\nNetwork policies are additive. By default, traffic is not restricted. However, you can add a network policy that blocks all ingress \u0026 egress traffic. Then you can selectively permit one or more incoming/outgoing connections as required following the principle of least privileges.\nGotchas Vanilla k8s network policies do not support:\ncluster-wide scope targeting k8s Service objects TLS traffic audit logs deny permissions Traffic on the same host is always permitted regardless of what network policies are applied to the pod.\nAdditionally, it takes time for a new network policy to take effect. If a pod exists before the network policy, then its traffic is effectively unsecured. Moreover, it is not defined what happens to an existing connection if a new network policy would deny it. It depends on the specific network plugin and it’s recommended to avoid modifying policies that affect existing connections.\nMake sure your pods are resilient to lost connections. Use retries with exponential backoff.\nExamples apiVersion: networking.k8s.io/v1 kind: NetworkPolicy metadata: name: default-deny-all namespace: foo spec: podSelector: {} # all pods in foo namespace policyTypes: - Ingress - Egress apiVersion: networking.k8s.io/v1 kind: NetworkPolicy metadata: name: allow-ingress namespace: bar spec: podSelector: matchLabels: appName: my-server ingress: - from: - podSelector: matchLabels: appName: my-client - namespaceSelector: matchLabels: name: foo - ipBlock: cidr: 1.2.3.0/24 policyTypes: - Ingress Cilium Network Policies Cilium is a networking solution that extends the capabilities of the basic k8s Network Policy. Cilium introduces the CiliumNetworkPolicy and CiliumClusterwideNetworkPolicy custom resource definitions (CRDs).\nUnlike the basic NetworkPolicy resource, Cilium network policies support policies at L3 and L7. This means you can target services by name when permitting ingress or egress traffic.\nTo learn more about Cilium network policies, refer to the documentation: https://docs.cilium.io/en/stable/security/policy/index.html\nConclusion Kubernetes network policies enforce ingress and egress traffic using TCP/UDP protocol at L3/L4 of the network stack. Network policies are installed on a per-namespace basis and apply to the selected pod(s).\nNetwork policies are additive and allow incoming or outgoing connections. If a connection is not explicitly allowed, then it’s denied.\nVanilla policies have some limitations which are addressed in external solutions such as Cilium. Without policies, all incoming and outgoing traffic is permitted which is not secure.\nReferences [1] https://kubernetes.io/docs/concepts/services-networking/network-policies/#the-two-sorts-of-pod-isolation [2] https://kubernetes.io/docs/concepts/cluster-administration/addons/#networking-and-network-policy [3] https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#networkpolicyspec-v1-networking-k8s-io ",
+  "wordCount" : "600",
+  "inLanguage": "en",
+  "datePublished": "2025-10-05T00:00:00Z",
+  "dateModified": "2025-10-05T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/2025/10-oct/2025-10-05_k8s_net-pols/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Partition Skew",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://example.org/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://example.org/tags/" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Kubernetes - Network Policies
+    </h1>
+    <div class="post-meta"><span title='2025-10-05 00:00:00 +0000 UTC'>October 5, 2025</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#introduction" aria-label="Introduction">Introduction</a></li>
+                <li>
+                    <a href="#kubernetes-network-policies" aria-label="Kubernetes Network Policies">Kubernetes Network Policies</a><ul>
+                        
+                <li>
+                    <a href="#gotchas" aria-label="Gotchas">Gotchas</a></li>
+                <li>
+                    <a href="#examples" aria-label="Examples">Examples</a></li></ul>
+                </li>
+                <li>
+                    <a href="#cilium-network-policies" aria-label="Cilium Network Policies">Cilium Network Policies</a></li>
+                <li>
+                    <a href="#conclusion" aria-label="Conclusion">Conclusion</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
+<p>By default, traffic between pods in a k8s cluster is <strong>non-isolated</strong> [1]. This means all incoming and outgoing connections are allowed, including those originating outside of the cluster. With the appropriate container networking plugins installed, Network Policies can secure both ingress and egress traffic.</p>
+<p>In this brief article, we describe what network policies are and give a couple simple examples of how to use them.</p>
+<h2 id="kubernetes-network-policies">Kubernetes Network Policies<a hidden class="anchor" aria-hidden="true" href="#kubernetes-network-policies">#</a></h2>
+<p>Network policies only take effect if the appropriate network plugin is installed. Check the documentation for a list of supported plugins [2]. Common choices include Calico and Cilium. Note that features and behaviour are not equivalent across network plugins.</p>
+<p>Network policies control UDP/TCP traffic at the L3/L4 layer (IP addresses &amp; ports). The network policy selects a set of pods via the <code>podSelector</code> [3]. For matching pods, the policy permits ingress and/or egress traffic from/to:</p>
+<ol>
+<li>pods</li>
+<li>namespaces</li>
+<li>IP blocks</li>
+</ol>
+<p>For example, a network policy permits pod A in namespace <code>foo</code> to make an outgoing connection to pod B in namespace <code>bar</code>. A separate network policy must permit pod B to accept traffic from pod A in namespace <code>foo</code> otherwise the connection will not be allowed.</p>
+<p>Of course, it is possible pod A doesn&rsquo;t have a network policy which means it can make any outgoing connection. Likewise, pod B may not have a network policy in which case it accepts all incoming connections.</p>
+<p>Network policies are additive. By default, traffic is not restricted. However, you can add a network policy that blocks all ingress &amp; egress traffic. Then you can selectively permit one or more incoming/outgoing connections as required following the <strong>principle of least privileges</strong>.</p>
+<h3 id="gotchas">Gotchas<a hidden class="anchor" aria-hidden="true" href="#gotchas">#</a></h3>
+<p>Vanilla k8s network policies do not support:</p>
+<ul>
+<li>cluster-wide scope</li>
+<li>targeting k8s <code>Service</code> objects</li>
+<li>TLS traffic</li>
+<li>audit logs</li>
+<li>deny permissions</li>
+</ul>
+<p>Traffic on the same host is always permitted regardless of what network policies are applied to the pod.</p>
+<p>Additionally, it takes time for a new network policy to take effect. If a pod exists before the network policy, then its traffic is effectively unsecured. Moreover, it is not defined what happens to an existing connection if a new network policy would deny it. It depends on the specific network plugin and it&rsquo;s recommended to avoid modifying policies that affect existing connections.</p>
+<p>Make sure your pods are resilient to lost connections. Use retries with exponential backoff.</p>
+<h3 id="examples">Examples<a hidden class="anchor" aria-hidden="true" href="#examples">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">networking.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">NetworkPolicy</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">default-deny-all</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">foo</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">podSelector</span>: {} <span style="color:#75715e"># all pods in foo namespace</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">policyTypes</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">Ingress</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">Egress</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">networking.k8s.io/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">NetworkPolicy</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">allow-ingress</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">bar</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">podSelector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">appName</span>: <span style="color:#ae81ff">my-server</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ingress</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">from</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">podSelector</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">appName</span>: <span style="color:#ae81ff">my-client</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">namespaceSelector</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">foo</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">ipBlock</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">cidr</span>: <span style="color:#ae81ff">1.2.3.0</span><span style="color:#ae81ff">/24</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">policyTypes</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">Ingress</span>
+</span></span></code></pre></div><h2 id="cilium-network-policies">Cilium Network Policies<a hidden class="anchor" aria-hidden="true" href="#cilium-network-policies">#</a></h2>
+<p>Cilium is a networking solution that extends the capabilities of the basic k8s Network Policy. Cilium introduces the <code>CiliumNetworkPolicy</code> and <code>CiliumClusterwideNetworkPolicy</code> custom resource definitions (CRDs).</p>
+<p>Unlike the basic <code>NetworkPolicy</code> resource, Cilium network policies support policies at L3 and L7. This means you can target services by name when permitting ingress or egress traffic.</p>
+<p>To learn more about Cilium network policies, refer to the documentation: <a href="https://docs.cilium.io/en/stable/security/policy/index.html">https://docs.cilium.io/en/stable/security/policy/index.html</a></p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>Kubernetes network policies enforce ingress and egress traffic using TCP/UDP protocol at L3/L4 of the network stack. Network policies are installed on a per-namespace basis and apply to the selected pod(s).</p>
+<p>Network policies are additive and allow incoming or outgoing connections. If a connection is not explicitly allowed, then it&rsquo;s denied.</p>
+<p>Vanilla policies have some limitations which are addressed in external solutions such as Cilium. Without policies, all incoming and outgoing traffic is permitted which is not secure.</p>
+<h2 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h2>
+<ul>
+<li>[1] <a href="https://kubernetes.io/docs/concepts/services-networking/network-policies/#the-two-sorts-of-pod-isolation">https://kubernetes.io/docs/concepts/services-networking/network-policies/#the-two-sorts-of-pod-isolation</a></li>
+<li>[2] <a href="https://kubernetes.io/docs/concepts/cluster-administration/addons/#networking-and-network-policy">https://kubernetes.io/docs/concepts/cluster-administration/addons/#networking-and-network-policy</a></li>
+<li>[3] <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#networkpolicyspec-v1-networking-k8s-io">https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#networkpolicyspec-v1-networking-k8s-io</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://example.org/tags/kubernetes/">Kubernetes</a></li>
+      <li><a href="https://example.org/tags/network-policy/">Network Policy</a></li>
+      <li><a href="https://example.org/tags/cilium/">Cilium</a></li>
+      <li><a href="https://example.org/tags/security/">Security</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://example.org/">Partition Skew</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

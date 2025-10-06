@@ -2,6 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://example.org/tags/cilium/</loc>
+    <lastmod>2025-10-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/kubernetes/</loc>
+    <lastmod>2025-10-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/posts/2025/10-oct/2025-10-05_k8s_net-pols/</loc>
+    <lastmod>2025-10-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/network-policy/</loc>
+    <lastmod>2025-10-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/</loc>
+    <lastmod>2025-10-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/posts/</loc>
+    <lastmod>2025-10-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/security/</loc>
+    <lastmod>2025-10-05T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://example.org/tags/</loc>
+    <lastmod>2025-10-05T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://example.org/tags/azure/</loc>
     <lastmod>2025-09-14T00:00:00+00:00</lastmod>
   </url><url>
@@ -23,19 +47,7 @@
     <loc>https://example.org/tags/networking/</loc>
     <lastmod>2025-09-14T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://example.org/</loc>
-    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/posts/</loc>
-    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/</loc>
-    <lastmod>2025-09-14T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://example.org/tags/argo-rollouts/</loc>
-    <lastmod>2025-07-27T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://example.org/tags/kubernetes/</loc>
     <lastmod>2025-07-27T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://example.org/tags/progressive-delivery/</loc>
