@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Helm Templating - Basics | Partition Skew</title>
+<meta name="keywords" content="kubernetes, helm, templating, helm charts">
+<meta name="description" content="A quick tutorial on Helm charts">
+<meta name="author" content="">
+<link rel="canonical" href="https://example.org/posts/2025/10-oct/2025-11-09_helm_templating/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.54405a410796490bc874ab6181fac9b675753cc2b91375d8f882566459eca428.css" integrity="sha256-VEBaQQeWSQvIdKthgfrJtnV1PMK5E3XY&#43;IJWZFnspCg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="https://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://example.org/posts/2025/10-oct/2025-11-09_helm_templating/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Helm Templating - Basics" />
+<meta property="og:description" content="A quick tutorial on Helm charts" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.org/posts/2025/10-oct/2025-11-09_helm_templating/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2025-11-09T00:00:00+00:00" />
+<meta property="article:modified_time" content="2025-11-09T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Helm Templating - Basics"/>
+<meta name="twitter:description" content="A quick tutorial on Helm charts"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Helm Templating - Basics",
+      "item": "https://example.org/posts/2025/10-oct/2025-11-09_helm_templating/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Helm Templating - Basics",
+  "name": "Helm Templating - Basics",
+  "description": "A quick tutorial on Helm charts",
+  "keywords": [
+    "kubernetes", "helm", "templating", "helm charts"
+  ],
+  "articleBody": "Introduction Helm is a package manager and helm charts are packages for deploying software in Kubernetes (k8s) clusters. Helm charts make it easy to install applications, data stores such as Redis or Vitess, and even core infrastructure such as Prometheus and service meshes in a k8s cluster in a DRY manner.\nIn this article, we introduce the basics of helm charts. We’ll discuss what helm charts are and how to create one. In the next article, we’ll cover the Helm templating language and go through some common patterns/bugs.\nNote that this article assumes you understand the basics of Kubernetes.\nWhat are helm charts? A helm chart consists of several files and folders. These all get bundled up and can be shared with other developers via internal or external Helm repositories. A typical helm chart has the following folder structure:\nChart.yaml\rREADME.md\rvalues.yaml\rtemplates/ This is by no means an exhaustive list. There are other files and folders that are omitted for brevity. From top to bottom:\nChart.yaml contains basic information about the chart, and some of the definitions can be used when rendering the final k8s manifests from the templates folder values.yaml contains default values for any variables or definitions used in the templates of the templates/ folder the templates/ folder is where all the k8s manifests are found The Chart.yaml has some mandatory and optional fields [2]:\napiVersion: v3 (required) version of Helm used by the chart (e.g. v1, v2, v3) name: example-chart (required) version: 0.1.0 (required) use semantic versioning and it is convention to start from 0.1.0 for pre-release charts type: application (optional) one of application or library to indicate what type of chart it is appVersion: “1.2.3” (optional) indicates what version of the app is being deployed by an application chart (e.g. MySQL chart deploys a v8 MySQL DB) Again, the list presented above is not exhaustive.\nMost charts are application charts meaning that they install or deploy an application to a k8s cluster. Some charts are library charts meaning that they serve as dependencies for other charts. We’ll cover an example of a library chart in the next article where we discuss Helm templating.\nWhat happens when we install a chart? To create a k8s object, you submit a manifest to the Kube API server. The manifest contains the specification for the type of object we want to create as well as its properties. As an example, we can write 3 separate manifests to deploy an application in our development, staging, and production k8s clusters, respectively. Typically one manifest isn’t enough to represent a complex application. It is very likely each environment would require a collection of manifests to represent a single deployment of an application. It’s also likely you’ll deploy the same app more than once in a given environment. For example, you may be partitioning your data using various dimensions such as the region or by some QoS tier.\nTo DRY (do not repeat yourself) this process, use a template to represent the common bits of the manifest. Similar to a function, the variable bits of the manifest can be replaced using values from a values file or passed in via the command line. Given a set of templates and one or more values files, we can therefore render a complete set of manifests for a given deployment of our application.\nHere’s an example of a basic Helm template for a pod and the corresponding values file to deploy it in the development cluster.\npod.yaml\napiVersion: v1 kind: Pod metadata: name: {{ .Values.environment }}-my-app-pod labels: environment: {{ .Values.environment }} spec: containers: - name: `httpbin` image: \"kennethreitz/httpbin:{{ .Values.version }}\" ports: - containerPort: 80 values.yaml\nenvironment: \"dev\" version: \"latest\" In the directory of the helm chart, you can render the manifests by running the following command: helm template --debug . --values values.yaml --set environment=prod\nThe . specifies the current directory where the helm command line tool can find the templates. We’ll replace any variables in the templates, denoted by the double curly braces {{ }}, with the corresponding value from the base values file. We can specify more than one values file or pass in the variable values directly. If there are overlapping variables, then the last file takes precedence.\nWhat we get in return is the final output which we can save into a file and submit to the k8s cluster:\napiVersion: v1 metadata: name: prod-my-app-pod labels: environment: prod spec: containers: - name: `httpbin` image: \"kennethreitz/httpbin:latest\" ports: - containerPort: 80 To install this manifest in our cluster, use either kubectl (e.g. kubectl apply -f pod.yaml) or via Helm command line tool (e.g. helm install ). You can also use CICD tools like ArgoCD to install the helm charts from a Git repository.\nUsing public charts Use public charts by adding the corresponding repo to your Helm repo list: helm repo add .\nBe sure to update the repo to ensure you have the latest versions available: helm repo update .\nList the charts in the repo using: helm search repo .\nFor a specific chart, check all of the available versions using helm search repo / --versions\nDownload a helm chart and inspect it locally using: helm pull / --version --untar\nConclusion In this brief tutorial, we learned that Helm is a package manager for Kubernetes manifests. Helm charts are the packages that collect and templatize Kubernetes manifests.\nWe covered the basic structure of a Helm chart and how to use the helm command line tool to download charts, render charts, and install charts in a k8s cluster.\nIn the next article, we’ll dive into the Helm templating language in depth as well as share some basic tips \u0026 tricks.\nReferences [1] https://helm.sh/docs/chart_template_guide/ [2] https://helm.sh/docs/topics/charts/#the-chartyaml-file ",
+  "wordCount" : "952",
+  "inLanguage": "en",
+  "datePublished": "2025-11-09T00:00:00Z",
+  "dateModified": "2025-11-09T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://example.org/posts/2025/10-oct/2025-11-09_helm_templating/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Partition Skew",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://example.org/" accesskey="h" title="Partition Skew (Alt + H)">Partition Skew</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://example.org/tags/" title="tags">
+                    <span>tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Helm Templating - Basics
+    </h1>
+    <div class="post-meta"><span title='2025-11-09 00:00:00 +0000 UTC'>November 9, 2025</span>
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#introduction" aria-label="Introduction">Introduction</a></li>
+                <li>
+                    <a href="#what-are-helm-charts" aria-label="What are helm charts?">What are helm charts?</a></li>
+                <li>
+                    <a href="#what-happens-when-we-install-a-chart" aria-label="What happens when we install a chart?">What happens when we install a chart?</a></li>
+                <li>
+                    <a href="#using-public-charts" aria-label="Using public charts">Using public charts</a></li>
+                <li>
+                    <a href="#conclusion" aria-label="Conclusion">Conclusion</a></li>
+                <li>
+                    <a href="#references" aria-label="References">References</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
+<p>Helm is a package manager and helm charts are packages for deploying software in Kubernetes (k8s) clusters. Helm charts make it easy to install applications, data stores such as Redis or Vitess, and even core infrastructure such as Prometheus and service meshes in a k8s cluster in a DRY manner.</p>
+<p>In this article, we introduce the basics of helm charts. We&rsquo;ll discuss what helm charts are and how to create one. In the next article, we&rsquo;ll cover the Helm templating language and go through some common patterns/bugs.</p>
+<p><em>Note that this article assumes you understand the basics of Kubernetes.</em></p>
+<h2 id="what-are-helm-charts">What are helm charts?<a hidden class="anchor" aria-hidden="true" href="#what-are-helm-charts">#</a></h2>
+<p>A helm chart consists of several files and folders. These all get bundled up and can be shared with other developers via internal or external Helm repositories. A typical helm chart has the following folder structure:</p>
+<pre tabindex="0"><code>Chart.yaml
+README.md
+values.yaml
+templates/
+</code></pre><p>This is by no means an exhaustive list. There are other files and folders that are omitted for brevity. From top to bottom:</p>
+<ul>
+<li><code>Chart.yaml</code> contains basic information about the chart, and some of the definitions can be used when rendering the final k8s manifests from the templates folder</li>
+<li><code>values.yaml</code> contains default values for any variables or definitions used in the templates of the <code>templates/</code> folder</li>
+<li>the <code>templates/</code> folder is where all the k8s manifests are found</li>
+</ul>
+<p>The <code>Chart.yaml</code> has some mandatory and optional fields [2]:</p>
+<ul>
+<li><strong>apiVersion</strong>: v3 (required)
+<ul>
+<li>version of Helm used by the chart (e.g. v1, v2, v3)</li>
+</ul>
+</li>
+<li><strong>name</strong>: example-chart (required)</li>
+<li><strong>version</strong>: 0.1.0 (required)
+<ul>
+<li>use semantic versioning and it is convention to start from 0.1.0 for pre-release charts</li>
+</ul>
+</li>
+<li><strong>type</strong>: application (optional)
+<ul>
+<li>one of application or library to indicate what type of chart it is</li>
+</ul>
+</li>
+<li><strong>appVersion</strong>: &ldquo;1.2.3&rdquo; (optional)
+<ul>
+<li>indicates what version of the app is being deployed by an application chart (e.g. MySQL chart deploys a v8 MySQL DB)</li>
+</ul>
+</li>
+</ul>
+<p>Again, the list presented above is not exhaustive.</p>
+<p>Most charts are <code>application</code> charts meaning that they install or deploy an application to a k8s cluster. Some charts are library charts meaning that they serve as dependencies for other charts. We&rsquo;ll cover an example of a library chart in the next article where we discuss Helm templating.</p>
+<h2 id="what-happens-when-we-install-a-chart">What happens when we install a chart?<a hidden class="anchor" aria-hidden="true" href="#what-happens-when-we-install-a-chart">#</a></h2>
+<p>To create a k8s object, you submit a manifest to the Kube API server. The manifest contains the specification for the type of object we want to create as well as its properties. As an example, we can write 3 separate manifests to deploy an application in our development, staging, and production k8s clusters, respectively. Typically one manifest isn&rsquo;t enough to represent a complex application. It is very likely each environment would require a collection of manifests to represent a single deployment of an application. It&rsquo;s also likely you&rsquo;ll deploy the same app more than once in a given environment. For example, you may be partitioning your data using various dimensions such as the region or by some QoS tier.</p>
+<p>To DRY (do not repeat yourself) this process, use a template to represent the common bits of the manifest. Similar to a function, the variable bits of the manifest can be replaced using values from a values file or passed in via the command line. Given a set of templates and one or more values files, we can therefore render a complete set of manifests for a given deployment of our application.</p>
+<p>Here&rsquo;s an example of a basic Helm template for a pod and the corresponding values file to deploy it in the <code>development</code> cluster.</p>
+<p><code>pod.yaml</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Pod</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: {{ <span style="color:#ae81ff">.Values.environment }}-my-app-pod</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>: {{ <span style="color:#ae81ff">.Values.environment }}</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">`httpbin`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;kennethreitz/httpbin:{{ .Values.version }}&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">80</span>
+</span></span></code></pre></div><p><code>values.yaml</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">environment</span>: <span style="color:#e6db74">&#34;dev&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#34;latest&#34;</span>
+</span></span></code></pre></div><p>In the directory of the helm chart, you can render the manifests by running the following command:
+<code>helm template --debug . --values values.yaml --set environment=prod</code></p>
+<p>The <code>.</code> specifies the current directory where the <code>helm</code> command line tool can find the templates. We&rsquo;ll replace any variables in the templates, denoted by the double curly braces <code>{{ }}</code>, with the corresponding value from the base values file. We can specify more than one values file or pass in the variable values directly. If there are overlapping variables, then the last file takes precedence.</p>
+<p>What we get in return is the final output which we can save into a file and submit to the k8s cluster:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">prod-my-app-pod</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>: <span style="color:#ae81ff">prod</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">`httpbin`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;kennethreitz/httpbin:latest&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">80</span>
+</span></span></code></pre></div><p>To install this manifest in our cluster, use either <code>kubectl</code> (e.g. kubectl apply -f pod.yaml) or via Helm command line tool (e.g. helm install <!-- raw HTML omitted --> <!-- raw HTML omitted -->). You can also use CICD tools like ArgoCD to install the helm charts from a Git repository.</p>
+<h2 id="using-public-charts">Using public charts<a hidden class="anchor" aria-hidden="true" href="#using-public-charts">#</a></h2>
+<p>Use public charts by adding the corresponding repo to your Helm repo list: <code>helm repo add &lt;repo_name&gt; &lt;repo_url&gt;</code>.</p>
+<p>Be sure to update the repo to ensure you have the latest versions available: <code>helm repo update &lt;repo_name&gt;</code>.</p>
+<p>List the charts in the repo using: <code>helm search repo &lt;repo_name&gt;</code>.</p>
+<p>For a specific chart, check all of the available versions using <code>helm search repo &lt;repo_name&gt;/&lt;chart_name&gt; --versions</code></p>
+<p>Download a helm chart and inspect it locally using: <code>helm pull &lt;repo_name&gt;/&lt;chart_name&gt; --version &lt;version&gt; --untar</code></p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>In this brief tutorial, we learned that Helm is a package manager for Kubernetes manifests. Helm charts are the packages that collect and templatize Kubernetes manifests.</p>
+<p>We covered the basic structure of a Helm chart and how to use the <code>helm</code> command line tool to download charts, render charts, and install charts in a k8s cluster.</p>
+<p>In the next article, we&rsquo;ll dive into the Helm templating language in depth as well as share some basic tips &amp; tricks.</p>
+<h2 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h2>
+<ul>
+<li>[1] <a href="https://helm.sh/docs/chart_template_guide/">https://helm.sh/docs/chart_template_guide/</a></li>
+<li>[2] <a href="https://helm.sh/docs/topics/charts/#the-chartyaml-file">https://helm.sh/docs/topics/charts/#the-chartyaml-file</a></li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://example.org/tags/kubernetes/">Kubernetes</a></li>
+      <li><a href="https://example.org/tags/helm/">Helm</a></li>
+      <li><a href="https://example.org/tags/templating/">Templating</a></li>
+      <li><a href="https://example.org/tags/helm-charts/">Helm Charts</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://example.org/">Partition Skew</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>
